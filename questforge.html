@@ -254,6 +254,31 @@
     .quest-item.quest-unavailable label {
       cursor: not-allowed;
     }
+
+    .dashboard-btn {
+      box-shadow: 0 0 0 2px #0a0e17, 0 0 0 3px rgba(0, 212, 255, 0.25);
+    }
+
+    .dashboard-btn:hover {
+      box-shadow: 0 0 0 2px #0a0e17, 0 0 0 3px rgba(0, 255, 136, 0.45);
+    }
+
+    .range-pill.active {
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 255, 136, 0.15));
+      border-color: rgba(0, 212, 255, 0.45);
+      color: #e2e8f0;
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+    }
+
+    .dashboard-chart-wrap {
+      min-height: 280px;
+    }
+
+    .dashboard-chart-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
   </style>
 </head>
 <body class="font-sans text-slate-200 min-h-screen antialiased">
@@ -284,14 +309,27 @@
             <span class="text-xs text-slate-400 uppercase tracking-wider">Lvl</span>
             <span id="level-display" class="text-lg font-bold text-forge-blue">1</span>
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex justify-between text-xs mb-1">
-              <span class="text-slate-400 hidden sm:inline">XP Progress</span>
-              <span id="xp-text" class="text-forge-green font-medium sm:ml-auto">0 / 100 XP</span>
+          <div class="flex-1 min-w-0 flex items-end gap-2">
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-400 hidden sm:inline">XP Progress</span>
+                <span id="xp-text" class="text-forge-green font-medium sm:ml-auto">0 / 100 XP</span>
+              </div>
+              <div class="h-3 rounded-full bg-forge-border overflow-hidden">
+                <div id="xp-bar" class="h-full rounded-full bg-gradient-to-r from-forge-blue to-forge-green transition-all duration-500 ease-out xp-bar-glow" style="width: 0%"></div>
+              </div>
             </div>
-            <div class="h-3 rounded-full bg-forge-border overflow-hidden">
-              <div id="xp-bar" class="h-full rounded-full bg-gradient-to-r from-forge-blue to-forge-green transition-all duration-500 ease-out xp-bar-glow" style="width: 0%"></div>
-            </div>
+            <button
+              id="dashboard-btn"
+              type="button"
+              class="dashboard-btn shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-forge-card border border-forge-border flex items-center justify-center text-forge-blue hover:text-forge-green hover:border-forge-blue/40 transition-all"
+              title="XP Dashboard"
+              aria-label="Open XP progress dashboard"
+            >
+              <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -486,6 +524,85 @@
           </p>
         </div>
       </aside>
+    </div>
+
+    <!-- XP Dashboard View -->
+    <div id="view-dashboard" class="hidden space-y-5">
+
+      <div class="stat-card rounded-2xl border border-forge-blue/25 p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-forge-blue/15 border border-forge-blue/30 flex items-center justify-center text-lg">📈</div>
+        <div>
+          <h2 class="text-lg font-bold text-slate-100">XP Progress Dashboard</h2>
+          <p class="text-sm text-slate-500">Track how much XP you earn over time and plan your next quests</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
+        <div class="stat-card rounded-2xl border border-forge-border p-5 shadow-lg">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Daily XP Earned</h2>
+            <div id="dashboard-range-pills" class="flex flex-wrap gap-1.5">
+              <button type="button" data-range="7d" class="range-pill active px-3 py-1.5 rounded-lg border border-forge-border text-xs font-semibold text-slate-400 transition">7 Days</button>
+              <button type="button" data-range="month" class="range-pill px-3 py-1.5 rounded-lg border border-forge-border text-xs font-semibold text-slate-400 transition">Month</button>
+              <button type="button" data-range="6mo" class="range-pill px-3 py-1.5 rounded-lg border border-forge-border text-xs font-semibold text-slate-400 transition">6 Months</button>
+              <button type="button" data-range="year" class="range-pill px-3 py-1.5 rounded-lg border border-forge-border text-xs font-semibold text-slate-400 transition">Year</button>
+              <button type="button" data-range="all" class="range-pill px-3 py-1.5 rounded-lg border border-forge-border text-xs font-semibold text-slate-400 transition">All Time</button>
+            </div>
+          </div>
+          <div id="dashboard-chart-wrap" class="dashboard-chart-wrap rounded-xl bg-forge-bg/50 border border-forge-border p-3 sm:p-4">
+            <div id="dashboard-chart" class="w-full"></div>
+          </div>
+          <p id="dashboard-chart-summary" class="text-xs text-slate-500 mt-3 text-center"></p>
+        </div>
+
+        <aside class="space-y-4">
+          <div class="stat-card rounded-2xl border border-forge-border p-5 shadow-lg">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Period Stats</h2>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center p-3 rounded-xl bg-forge-bg/60 border border-forge-border">
+                <span class="text-sm text-slate-400">Today's XP</span>
+                <span id="dash-today-xp" class="text-lg font-bold text-forge-green">0</span>
+              </div>
+              <div class="flex justify-between items-center p-3 rounded-xl bg-forge-bg/60 border border-forge-border">
+                <span class="text-sm text-slate-400">Period Total</span>
+                <span id="dash-period-xp" class="text-lg font-bold text-forge-blue">0</span>
+              </div>
+              <div class="flex justify-between items-center p-3 rounded-xl bg-forge-bg/60 border border-forge-border">
+                <span class="text-sm text-slate-400">Daily Average</span>
+                <span id="dash-avg-xp" class="text-lg font-bold text-slate-200">0</span>
+              </div>
+              <div class="flex justify-between items-center p-3 rounded-xl bg-forge-bg/60 border border-forge-border">
+                <span class="text-sm text-slate-400">Best Day</span>
+                <span id="dash-best-day" class="text-lg font-bold text-orange-400">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card rounded-2xl border border-forge-border p-5 shadow-lg">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Available XP</h2>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between text-slate-400">
+                <span>Open quests</span>
+                <span id="dash-open-quests" class="text-slate-200 font-semibold">0</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>XP you can still earn</span>
+                <span id="dash-pending-xp" class="text-forge-green font-bold">0</span>
+              </div>
+              <div class="pt-2 border-t border-forge-border space-y-1.5 text-xs text-slate-500">
+                <p><span class="text-forge-green">Easy</span> · 10 XP — <span id="dash-easy-count">0</span> open</p>
+                <p><span class="text-forge-blue">Medium</span> · 25 XP — <span id="dash-medium-count">0</span> open</p>
+                <p><span class="text-pink-400">Hard</span> · 50 XP — <span id="dash-hard-count">0</span> open</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card rounded-2xl border border-forge-border/60 p-4">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Keep It Up</h2>
+            <ul id="dash-tips" class="text-xs text-slate-500 space-y-2 leading-relaxed"></ul>
+          </div>
+        </aside>
+      </div>
     </div>
 
     <!-- Prize Store View -->
@@ -991,6 +1108,13 @@
       extras: {}
     };
     const DEFAULT_PARENT = { displayName: 'Parent', avatar: '👨‍👩‍👧' };
+    const DASHBOARD_RANGES = {
+      '7d': { label: 'Past 7 Days', days: 7 },
+      month: { label: 'Past Month', days: 30 },
+      '6mo': { label: 'Past 6 Months', days: 180 },
+      year: { label: 'Past Year', days: 365 },
+      all: { label: 'All Time', days: null }
+    };
 
     function padDate(n) {
       return String(n).padStart(2, '0');
@@ -1089,7 +1213,9 @@
         activeRole: 'teen',
         selectedTeamId: null,
         xpSpent: 0,
-        redemptions: []
+        redemptions: [],
+        xpHistory: {},
+        dashboardRange: '7d'
       };
     }
 
@@ -1108,6 +1234,8 @@
           activityLog: parsed.activityLog || [],
           xpSpent: parsed.xpSpent || 0,
           redemptions: parsed.redemptions || [],
+          xpHistory: parsed.xpHistory || {},
+          dashboardRange: parsed.dashboardRange || '7d',
           connections: parsed.connections || [],
           teams: (parsed.teams || []).map(team => ({
             ...team,
@@ -1348,6 +1476,7 @@
         render();
         if (state.activeView === 'team') renderTeamView();
         if (state.activeView === 'store') renderStoreView();
+        if (state.activeView === 'dashboard') renderDashboardView();
       } else {
         renderParentView();
       }
@@ -1379,6 +1508,190 @@
 
     function todayString() {
       return new Date().toISOString().split('T')[0];
+    }
+
+    function ensureXpHistory() {
+      if (!state.xpHistory || typeof state.xpHistory !== 'object') state.xpHistory = {};
+    }
+
+    function recordXPChange(delta, dateStr = null) {
+      if (!delta) return;
+      ensureXpHistory();
+      const day = dateStr || todayString();
+      state.xpHistory[day] = Math.max(0, (state.xpHistory[day] || 0) + delta);
+    }
+
+    function getChartDateKeys(rangeKey) {
+      const end = new Date();
+      end.setHours(0, 0, 0, 0);
+      let start;
+
+      if (rangeKey === 'all') {
+        const keys = Object.keys(state.xpHistory || {}).sort();
+        if (keys.length === 0) {
+          start = new Date(end);
+          start.setDate(start.getDate() - 6);
+        } else {
+          start = new Date(keys[0] + 'T12:00:00');
+        }
+      } else {
+        const days = DASHBOARD_RANGES[rangeKey]?.days || 7;
+        start = new Date(end);
+        start.setDate(start.getDate() - (days - 1));
+      }
+
+      const dates = [];
+      const cur = new Date(start);
+      while (cur <= end) {
+        dates.push(cur.toISOString().split('T')[0]);
+        cur.setDate(cur.getDate() + 1);
+      }
+      return dates;
+    }
+
+    function getOpenQuestStats() {
+      const open = [
+        ...state.quests.filter(q => !q.completed && isRecurrenceAvailableToday(q.recurrence)),
+        ...state.parentQuests.filter(q => !q.completed && isRecurrenceAvailableToday(q.recurrence))
+      ];
+      const counts = { easy: 0, medium: 0, hard: 0 };
+      let pendingXP = 0;
+      open.forEach(q => {
+        counts[q.difficulty] = (counts[q.difficulty] || 0) + 1;
+        pendingXP += DIFFICULTY_XP[q.difficulty] || 0;
+      });
+      return { open, counts, pendingXP };
+    }
+
+    function formatShortDate(dateStr) {
+      const d = new Date(dateStr + 'T12:00:00');
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    function renderDashboardChart() {
+      const container = document.getElementById('dashboard-chart');
+      if (!container) return;
+
+      const rangeKey = state.dashboardRange || '7d';
+      const dates = getChartDateKeys(rangeKey);
+      const values = dates.map(d => state.xpHistory?.[d] || 0);
+      const maxVal = Math.max(10, ...values);
+      const total = values.reduce((a, b) => a + b, 0);
+      const best = Math.max(...values, 0);
+      const avg = dates.length ? Math.round(total / dates.length) : 0;
+      const todayXP = state.xpHistory?.[todayString()] || 0;
+
+      document.getElementById('dash-today-xp').textContent = todayXP.toLocaleString();
+      document.getElementById('dash-period-xp').textContent = total.toLocaleString();
+      document.getElementById('dash-avg-xp').textContent = avg.toLocaleString();
+      document.getElementById('dash-best-day').textContent = best.toLocaleString();
+
+      const { open, counts, pendingXP } = getOpenQuestStats();
+      document.getElementById('dash-open-quests').textContent = open.length;
+      document.getElementById('dash-pending-xp').textContent = pendingXP.toLocaleString();
+      document.getElementById('dash-easy-count').textContent = counts.easy || 0;
+      document.getElementById('dash-medium-count').textContent = counts.medium || 0;
+      document.getElementById('dash-hard-count').textContent = counts.hard || 0;
+
+      const summary = document.getElementById('dashboard-chart-summary');
+      if (summary) {
+        summary.textContent = total === 0
+          ? `No XP logged yet for ${DASHBOARD_RANGES[rangeKey]?.label || 'this period'}. Complete a quest to start your graph!`
+          : `${total.toLocaleString()} XP earned over ${DASHBOARD_RANGES[rangeKey]?.label || 'this period'} · daily average ${avg}`;
+      }
+
+      const tips = document.getElementById('dash-tips');
+      if (tips) {
+        const tipsList = [
+          state.streak > 0
+            ? `🔥 ${state.streak}-day streak! Complete at least one quest today to keep it going.`
+            : '⚡ Complete any quest today to start a streak.',
+          open.length > 0
+            ? `🎯 ${pendingXP} XP still available from ${open.length} open quest${open.length !== 1 ? 's' : ''}.`
+            : '➕ Add new quests to keep earning XP.',
+          counts.hard > 0
+            ? `💪 ${counts.hard} hard quest${counts.hard !== 1 ? 's' : ''} open — 50 XP each.`
+            : 'Hard quests earn 50 XP — great for big progress days.',
+          getSpendableXP() > 0
+            ? `🏪 ${getSpendableXP()} spendable XP in the Prize Store.`
+            : 'Earn XP from quests, then redeem prizes in the store.'
+        ];
+        tips.innerHTML = tipsList.map(t => `<li>${escapeHtml(t)}</li>`).join('');
+      }
+
+      const w = 640;
+      const h = 260;
+      const pad = { top: 20, right: 16, bottom: 36, left: 44 };
+      const plotW = w - pad.left - pad.right;
+      const plotH = h - pad.top - pad.bottom;
+      const n = dates.length;
+      const points = values.map((v, i) => {
+        const x = pad.left + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+        const y = pad.top + plotH - (v / maxVal) * plotH;
+        return { x, y, v, date: dates[i] };
+      });
+
+      const linePoints = points.map(p => `${p.x},${p.y}`).join(' ');
+      const areaPoints = [
+        `${points[0]?.x || pad.left},${pad.top + plotH}`,
+        ...points.map(p => `${p.x},${p.y}`),
+        `${points[points.length - 1]?.x || pad.left},${pad.top + plotH}`
+      ].join(' ');
+
+      const yTicks = [0, Math.round(maxVal / 2), maxVal];
+      const labelEvery = n <= 8 ? 1 : n <= 31 ? Math.ceil(n / 7) : Math.ceil(n / 6);
+
+      const yGrid = yTicks.map(t => {
+        const y = pad.top + plotH - (t / maxVal) * plotH;
+        return `<line x1="${pad.left}" y1="${y}" x2="${w - pad.right}" y2="${y}" stroke="#1e293b" stroke-width="1"/>
+          <text x="${pad.left - 8}" y="${y + 4}" text-anchor="end" fill="#64748b" font-size="10">${t}</text>`;
+      }).join('');
+
+      const xLabels = points.map((p, i) => {
+        if (i % labelEvery !== 0 && i !== n - 1) return '';
+        return `<text x="${p.x}" y="${h - 10}" text-anchor="middle" fill="#64748b" font-size="10">${formatShortDate(p.date)}</text>`;
+      }).join('');
+
+      const dots = points.map(p =>
+        `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#00ff88" stroke="#0a0e17" stroke-width="1.5">
+          <title>${formatShortDate(p.date)}: ${p.v} XP</title>
+        </circle>`
+      ).join('');
+
+      container.innerHTML = `
+        <svg class="dashboard-chart-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Line chart of daily XP earned">
+          <defs>
+            <linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="rgba(0,212,255,0.25)"/>
+              <stop offset="100%" stop-color="rgba(0,212,255,0)"/>
+            </linearGradient>
+          </defs>
+          ${yGrid}
+          <polygon points="${areaPoints}" fill="url(#chart-fill)"/>
+          <polyline points="${linePoints}" fill="none" stroke="#00d4ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          ${dots}
+          ${xLabels}
+        </svg>
+      `;
+
+      document.querySelectorAll('#dashboard-range-pills .range-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.range === rangeKey);
+      });
+    }
+
+    function renderDashboardView() {
+      renderDashboardChart();
+    }
+
+    function initDashboard() {
+      document.getElementById('dashboard-btn')?.addEventListener('click', () => switchView('dashboard'));
+      document.querySelectorAll('#dashboard-range-pills .range-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.dashboardRange = btn.dataset.range;
+          saveState();
+          renderDashboardView();
+        });
+      });
     }
 
     function yesterdayString() {
@@ -1443,12 +1756,14 @@
       document.getElementById('view-solo').classList.toggle('hidden', view !== 'solo');
       document.getElementById('view-team').classList.toggle('hidden', view !== 'team');
       document.getElementById('view-store').classList.toggle('hidden', view !== 'store');
+      document.getElementById('view-dashboard').classList.toggle('hidden', view !== 'dashboard');
       document.querySelectorAll('.nav-tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.view === view);
       });
 
       if (view === 'team') renderTeamView();
       if (view === 'store') renderStoreView();
+      if (view === 'dashboard') renderDashboardView();
     }
 
     function openModal(id) {
@@ -1592,18 +1907,21 @@
         if (isYours) {
           state.totalXP += xp;
           state.questsCompleted += 1;
+          recordXPChange(xp);
           updateStreak();
           showXPPopup(xp, checkboxEl);
           const newLevel = getLevel(state.totalXP);
           if (newLevel > prevLevel) showLevelUp(newLevel);
         }
       } else {
+        const earnDate = quest.completedAt ? quest.completedAt.split('T')[0] : todayString();
         quest.completed = false;
         quest.completedAt = null;
         quest.completedBy = null;
         if (isYours) {
           state.totalXP = Math.max(0, state.totalXP - xp);
           state.questsCompleted = Math.max(0, state.questsCompleted - 1);
+          recordXPChange(-xp, earnDate);
         }
       }
 
@@ -1619,8 +1937,10 @@
 
       if (quest.completed && quest.assigneeId === SELF_ID) {
         const xp = DIFFICULTY_XP[quest.difficulty];
+        const earnDate = quest.completedAt ? quest.completedAt.split('T')[0] : todayString();
         state.totalXP = Math.max(0, state.totalXP - xp);
         state.questsCompleted = Math.max(0, state.questsCompleted - 1);
+        recordXPChange(-xp, earnDate);
       }
 
       team.quests = team.quests.filter(q => q.id !== questId);
@@ -1956,15 +2276,18 @@
         quest.completedPeriod = getPeriodKey(quest.recurrence || 'once');
         state.totalXP += xp;
         state.questsCompleted += 1;
+        recordXPChange(xp);
         updateStreak();
         return { xp, prevLevel, completed: true };
       }
 
+      const earnDate = quest.completedAt ? quest.completedAt.split('T')[0] : todayString();
       quest.completed = false;
       quest.completedAt = null;
       quest.completedPeriod = null;
       state.totalXP = Math.max(0, state.totalXP - xp);
       state.questsCompleted = Math.max(0, state.questsCompleted - 1);
+      recordXPChange(-xp, earnDate);
       return { xp, prevLevel, completed: false };
     }
 
@@ -2033,8 +2356,10 @@
 
       if (quest.completed) {
         const xp = DIFFICULTY_XP[quest.difficulty];
+        const earnDate = quest.completedAt ? quest.completedAt.split('T')[0] : todayString();
         state.totalXP = Math.max(0, state.totalXP - xp);
         state.questsCompleted = Math.max(0, state.questsCompleted - 1);
+        recordXPChange(-xp, earnDate);
       }
 
       logActivity('parent_quest_deleted', { questTitle: quest.title, source: 'parent' });
@@ -2070,6 +2395,7 @@
 
       saveState();
       render();
+      if (state.activeView === 'dashboard') renderDashboardView();
       if (state.activeRole === 'parent') renderParentView();
     }
 
@@ -2079,8 +2405,10 @@
 
       if (quest.completed) {
         const xp = DIFFICULTY_XP[quest.difficulty];
+        const earnDate = quest.completedAt ? quest.completedAt.split('T')[0] : todayString();
         state.totalXP = Math.max(0, state.totalXP - xp);
         state.questsCompleted = Math.max(0, state.questsCompleted - 1);
+        recordXPChange(-xp, earnDate);
       }
 
       logActivity('teen_quest_deleted', { questTitle: quest.title, source: 'teen' });
@@ -2567,6 +2895,7 @@
       }
 
       if (state.activeView === 'store') renderStoreView();
+      if (state.activeView === 'dashboard') renderDashboardView();
     }
 
     function boot() {
@@ -2577,6 +2906,8 @@
       if (!Array.isArray(state.activityLog)) state.activityLog = [];
       if (!Array.isArray(state.redemptions)) state.redemptions = [];
       if (typeof state.xpSpent !== 'number') state.xpSpent = 0;
+      ensureXpHistory();
+      if (!state.dashboardRange) state.dashboardRange = '7d';
 
       const addForm = document.getElementById('add-quest-form');
       if (addForm) {
@@ -2595,6 +2926,7 @@
       initProfile();
       initTeam();
       initStore();
+      initDashboard();
       initParent();
       render();
       switchView(state.activeView || 'solo');
