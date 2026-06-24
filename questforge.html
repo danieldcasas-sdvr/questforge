@@ -1,0 +1,2614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuestForge</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Outfit', 'system-ui', 'sans-serif'] },
+          colors: {
+            forge: {
+              bg: '#0a0e17',
+              card: '#111827',
+              border: '#1e293b',
+              blue: '#00d4ff',
+              green: '#00ff88',
+              purple: '#8b5cf6',
+            }
+          },
+          boxShadow: {
+            neon: '0 0 20px rgba(0, 212, 255, 0.3)',
+            'neon-green': '0 0 20px rgba(0, 255, 136, 0.35)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: #0a0e17;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 212, 255, 0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(0, 255, 136, 0.08), transparent);
+    }
+
+    .xp-bar-glow {
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+
+    .quest-checkbox:checked + .check-box {
+      background: linear-gradient(135deg, #00ff88, #00d4ff);
+      border-color: #00ff88;
+      box-shadow: 0 0 16px rgba(0, 255, 136, 0.5);
+    }
+
+    .quest-checkbox:checked + .check-box svg {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .quest-item.completed {
+      opacity: 0.55;
+    }
+
+    .quest-item.completed .quest-title {
+      text-decoration: line-through;
+      text-decoration-color: rgba(0, 255, 136, 0.5);
+    }
+
+    .difficulty-easy { --diff-color: #00ff88; }
+    .difficulty-medium { --diff-color: #00d4ff; }
+    .difficulty-hard { --diff-color: #f472b6; }
+
+    .difficulty-badge {
+      background: color-mix(in srgb, var(--diff-color) 15%, transparent);
+      border: 1px solid color-mix(in srgb, var(--diff-color) 40%, transparent);
+      color: var(--diff-color);
+    }
+
+    .xp-popup {
+      animation: xp-float 1.2s ease-out forwards;
+      pointer-events: none;
+    }
+
+    @keyframes xp-float {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-48px) scale(1.2); }
+    }
+
+    @keyframes level-pulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
+      50% { box-shadow: 0 0 32px rgba(0, 255, 136, 0.5); }
+    }
+
+    .level-up-pulse {
+      animation: level-pulse 0.8s ease-in-out 3;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, rgba(17, 24, 39, 0.9), rgba(17, 24, 39, 0.6));
+      backdrop-filter: blur(12px);
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+    .profile-btn-ring {
+      box-shadow: 0 0 0 2px #0a0e17, 0 0 0 4px rgba(0, 212, 255, 0.35);
+    }
+
+    .profile-btn-ring:hover {
+      box-shadow: 0 0 0 2px #0a0e17, 0 0 0 4px rgba(0, 255, 136, 0.5);
+    }
+
+    .modal-backdrop {
+      animation: fade-in 0.2s ease-out;
+    }
+
+    .modal-panel {
+      animation: slide-up 0.25s ease-out;
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(16px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .avatar-option.selected {
+      border-color: #00ff88;
+      background: rgba(0, 255, 136, 0.12);
+      box-shadow: 0 0 16px rgba(0, 255, 136, 0.35);
+    }
+
+    .nav-tab.active {
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 255, 136, 0.15));
+      border-color: rgba(0, 212, 255, 0.45);
+      color: #e2e8f0;
+      box-shadow: 0 0 16px rgba(0, 212, 255, 0.2);
+    }
+
+    .team-card.selected {
+      border-color: rgba(139, 92, 246, 0.6);
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.25);
+    }
+
+    .assignee-you {
+      background: rgba(0, 212, 255, 0.12);
+      border-color: rgba(0, 212, 255, 0.35);
+      color: #00d4ff;
+    }
+
+    .team-progress-glow {
+      box-shadow: 0 0 12px rgba(139, 92, 246, 0.45);
+    }
+
+    .role-tab.active-teen {
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 255, 136, 0.15));
+      border-color: rgba(0, 212, 255, 0.45);
+      color: #e2e8f0;
+      box-shadow: 0 0 16px rgba(0, 212, 255, 0.2);
+    }
+
+    .role-tab.active-parent {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.12));
+      border-color: rgba(251, 191, 36, 0.45);
+      color: #fde68a;
+      box-shadow: 0 0 16px rgba(251, 191, 36, 0.2);
+    }
+
+    .parent-badge {
+      background: rgba(251, 191, 36, 0.12);
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      color: #fbbf24;
+    }
+
+    body.parent-mode header {
+      border-color: rgba(251, 191, 36, 0.15);
+    }
+
+    /* Critical: keep modals from blocking clicks when closed (works even if Tailwind CDN is slow) */
+    .hidden {
+      display: none !important;
+      pointer-events: none !important;
+    }
+
+    #profile-modal,
+    #connection-modal,
+    #team-modal {
+      display: none;
+      pointer-events: none;
+    }
+
+    #profile-modal.is-open,
+    #connection-modal.is-open,
+    #team-modal.is-open {
+      display: block;
+      pointer-events: auto;
+    }
+
+    #xp-popup-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      overflow: visible;
+      pointer-events: none !important;
+      z-index: 100;
+    }
+
+    #app-root {
+      position: relative;
+      z-index: 1;
+    }
+
+    .store-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .store-card:not(.store-card-disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 24px rgba(0, 212, 255, 0.15);
+      border-color: rgba(0, 212, 255, 0.35);
+    }
+
+    .store-card-disabled {
+      opacity: 0.55;
+    }
+
+    @keyframes redeem-pop {
+      0% { opacity: 0; transform: translateY(12px) scale(0.95); }
+      15% { opacity: 1; transform: translateY(0) scale(1); }
+      85% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-8px) scale(0.98); }
+    }
+
+    .redeem-toast-animate {
+      animation: redeem-pop 2.5s ease-out forwards;
+    }
+
+    .recurrence-badge {
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      color: #a78bfa;
+    }
+
+    .quest-item.quest-unavailable {
+      opacity: 0.5;
+    }
+
+    .quest-item.quest-unavailable label {
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-200 min-h-screen antialiased">
+
+  <div id="app-root">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 border-b border-forge-border/80 bg-forge-bg/80 backdrop-blur-xl">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+      <div class="flex items-center gap-3 sm:gap-4">
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-forge-blue to-forge-green flex items-center justify-center shadow-neon">
+            <svg class="w-6 h-6 text-forge-bg" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2L4 7v10l8 5 8-5V7L12 2zm0 2.18l6 3.75v7.14l-6 3.75-6-3.75V7.93l6-3.75z"/>
+              <path d="M12 8l-4 2.5v5L12 18l4-2.5v-5L12 8z"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-lg sm:text-xl font-extrabold tracking-tight">
+              <span class="text-forge-blue">Quest</span><span class="text-forge-green">Forge</span>
+            </h1>
+            <p id="header-tagline" class="text-xs text-slate-500 hidden sm:block">Level up your life, one quest at a time</p>
+          </div>
+        </div>
+
+        <div id="teen-header-stats" class="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+          <div id="level-badge" class="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-full bg-forge-card border border-forge-blue/30 shadow-neon">
+            <span class="text-xs text-slate-400 uppercase tracking-wider">Lvl</span>
+            <span id="level-display" class="text-lg font-bold text-forge-blue">1</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-slate-400 hidden sm:inline">XP Progress</span>
+              <span id="xp-text" class="text-forge-green font-medium sm:ml-auto">0 / 100 XP</span>
+            </div>
+            <div class="h-3 rounded-full bg-forge-border overflow-hidden">
+              <div id="xp-bar" class="h-full rounded-full bg-gradient-to-r from-forge-blue to-forge-green transition-all duration-500 ease-out xp-bar-glow" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="parent-header-label" class="hidden flex-1 min-w-0 text-right px-2">
+          <p class="text-sm font-semibold text-amber-400">Parent Portal</p>
+          <p id="parent-header-sub" class="text-xs text-slate-500 truncate">Monitoring your teen</p>
+        </div>
+
+        <div id="role-switcher" class="shrink-0 flex rounded-xl border border-forge-border p-0.5 bg-forge-card" role="tablist" aria-label="Switch account view">
+          <button type="button" data-role="teen" class="role-tab active-teen px-3 py-1.5 rounded-lg text-xs font-bold transition-all" role="tab" aria-selected="true">🎮 Teen</button>
+          <button type="button" data-role="parent" class="role-tab px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 transition-all" role="tab" aria-selected="false">👨‍👩‍👧 Parent</button>
+        </div>
+
+        <button
+          id="profile-btn"
+          type="button"
+          class="shrink-0 flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-forge-card border border-forge-border hover:border-forge-blue/40 transition-all duration-200 group"
+          aria-label="View profile"
+          aria-haspopup="dialog"
+        >
+          <div id="profile-btn-avatar" class="w-9 h-9 rounded-full bg-gradient-to-br from-forge-blue/20 to-forge-green/20 border border-forge-border flex items-center justify-center text-lg profile-btn-ring group-hover:scale-105 transition-transform">
+            ⚔️
+          </div>
+          <div class="hidden md:block text-left max-w-[120px]">
+            <p id="profile-btn-name" class="text-sm font-semibold text-slate-200 truncate">Adventurer</p>
+            <p id="profile-btn-title" class="text-xs text-slate-500 truncate">Set up profile</p>
+          </div>
+          <svg class="w-4 h-4 text-slate-500 hidden md:block shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+
+    <!-- Teen App -->
+    <div id="teen-app">
+
+    <!-- View Tabs -->
+    <nav id="teen-nav-tabs" class="flex gap-2 mb-6" aria-label="Main navigation">
+      <button id="tab-solo" type="button" class="nav-tab active flex items-center gap-2 px-4 py-2.5 rounded-xl border border-forge-border text-sm font-semibold text-slate-400 transition-all" data-view="solo">
+        <span>⚔️</span> Solo Quests
+      </button>
+      <button id="tab-team" type="button" class="nav-tab flex items-center gap-2 px-4 py-2.5 rounded-xl border border-forge-border text-sm font-semibold text-slate-400 transition-all" data-view="team">
+        <span>👥</span> Team Quests
+      </button>
+      <button id="tab-store" type="button" class="nav-tab flex items-center gap-2 px-4 py-2.5 rounded-xl border border-forge-border text-sm font-semibold text-slate-400 transition-all" data-view="store">
+        <span>🏪</span> Prize Store
+      </button>
+    </nav>
+
+    <!-- Solo View -->
+    <div id="view-solo" class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+
+      <!-- Quest Panel -->
+      <section class="space-y-5">
+        <!-- Add Quest -->
+        <div class="stat-card rounded-2xl border border-forge-border p-5 shadow-lg">
+          <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">New Quest</h2>
+          <form id="add-quest-form" class="flex flex-col gap-3">
+            <input
+              id="quest-input"
+              type="text"
+              placeholder="What will you conquer today?"
+              maxlength="120"
+              class="w-full px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-100 placeholder-slate-500 focus:outline-none focus:border-forge-blue/60 focus:ring-1 focus:ring-forge-blue/30 transition"
+              autocomplete="off"
+            />
+            <div class="flex flex-col sm:flex-row gap-2">
+              <select
+                id="difficulty-select"
+                class="flex-1 px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-200 focus:outline-none focus:border-forge-green/60 focus:ring-1 focus:ring-forge-green/30 transition cursor-pointer"
+              >
+                <option value="easy">Easy · 10 XP</option>
+                <option value="medium" selected>Medium · 25 XP</option>
+                <option value="hard">Hard · 50 XP</option>
+              </select>
+              <select
+                id="recurrence-select"
+                class="flex-1 px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-200 focus:outline-none focus:border-forge-purple/60 focus:ring-1 focus:ring-forge-purple/30 transition cursor-pointer"
+                title="How often does this quest repeat?"
+              >
+                <option value="once" selected>One-time</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="weekdays">Weekdays (Mon–Fri)</option>
+                <option value="weekends">Weekends only</option>
+                <option value="monthly">Monthly</option>
+              </select>
+              <button
+                type="submit"
+                class="px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-forge-blue to-forge-green text-forge-bg hover:shadow-neon-green transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap shrink-0"
+              >
+                + Forge
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Quest List -->
+        <div class="stat-card rounded-2xl border border-forge-border p-5 shadow-lg">
+          <div id="parent-quests-section" class="hidden mb-5 pb-5 border-b border-forge-border">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-sm font-semibold text-amber-400/90 uppercase tracking-wider flex items-center gap-2">
+                <span>👨‍👩‍👧</span> From Parent
+              </h2>
+              <span id="parent-quest-count" class="text-xs text-slate-500">0 quests</span>
+            </div>
+            <ul id="parent-quest-list" class="space-y-2"></ul>
+          </div>
+
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">My Quests</h2>
+            <span id="quest-count" class="text-xs text-slate-500">0 quests</span>
+          </div>
+          <ul id="quest-list" class="space-y-2 min-h-[80px]">
+            <!-- quests rendered here -->
+          </ul>
+          <div id="empty-state" class="hidden flex flex-col items-center justify-center py-12 text-center">
+            <div class="w-16 h-16 rounded-2xl bg-forge-border/50 flex items-center justify-center mb-4">
+              <svg class="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+            </div>
+            <p class="text-slate-400 font-medium">No quests yet</p>
+            <p class="text-sm text-slate-500 mt-1">Forge your first quest above and start earning XP!</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stats Sidebar -->
+      <aside class="space-y-4">
+        <div class="stat-card rounded-2xl border border-forge-border p-5 shadow-lg">
+          <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Your Stats</h2>
+          <div class="space-y-4">
+            <div class="flex items-center gap-4 p-3 rounded-xl bg-forge-bg/60 border border-forge-border">
+              <div class="w-10 h-10 rounded-lg bg-forge-blue/10 border border-forge-blue/30 flex items-center justify-center">
+                <svg class="w-5 h-5 text-forge-blue" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 uppercase tracking-wider">Total XP</p>
+                <p id="stat-total-xp" class="text-2xl font-bold text-forge-blue">0</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4 p-3 rounded-xl bg-forge-bg/60 border border-forge-border">
+              <div class="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center">
+                <svg class="w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M13.5.67s.74 2.65.74 4.8c0 2.49-2.25 4.65-4.75 4.65S5.25 8 5.25 5.5c0-2.15.74-4.8.74-4.8C4.5 1.5 2.73 3.25 2.73 5.5c0 2.25 1.77 4 4 4h10.54c2.23 0 4-1.75 4-4 0-2.25-1.77-4-4.02-4z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 uppercase tracking-wider">Current Streak</p>
+                <p class="text-2xl font-bold text-orange-400">
+                  <span id="stat-streak">0</span>
+                  <span class="text-sm font-normal text-slate-500">days</span>
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4 p-3 rounded-xl bg-forge-bg/60 border border-forge-border">
+              <div class="w-10 h-10 rounded-lg bg-forge-green/10 border border-forge-green/30 flex items-center justify-center">
+                <svg class="w-5 h-5 text-forge-green" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 uppercase tracking-wider">Quests Completed</p>
+                <p id="stat-completed" class="text-2xl font-bold text-forge-green">0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button id="sidebar-store-link" type="button" class="stat-card w-full rounded-2xl border border-forge-blue/25 p-4 text-left hover:border-forge-green/40 transition group">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-slate-500 uppercase tracking-wider">Prize Store</p>
+              <p class="text-lg font-bold text-forge-green mt-1"><span id="sidebar-spendable">0</span> XP to spend</p>
+            </div>
+            <span class="text-2xl group-hover:scale-110 transition-transform">🏪</span>
+          </div>
+        </button>
+
+        <div class="stat-card rounded-2xl border border-forge-border/60 p-4 text-center">
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Complete at least one quest daily to keep your streak alive. Harder quests earn more XP!
+          </p>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Prize Store View -->
+    <div id="view-store" class="hidden space-y-5">
+
+      <div class="stat-card rounded-2xl border border-forge-blue/25 p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+        <div class="flex items-center gap-4 flex-1">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-forge-blue/20 to-forge-green/20 border border-forge-blue/30 flex items-center justify-center text-3xl shadow-neon">🏪</div>
+          <div>
+            <h2 class="text-xl font-bold text-slate-100">Quest Completion Store</h2>
+            <p class="text-sm text-slate-500">Redeem your hard-earned XP for real-world prizes</p>
+          </div>
+        </div>
+        <div class="shrink-0 px-5 py-3 rounded-xl bg-forge-bg/70 border border-forge-green/30 text-center">
+          <p class="text-xs text-slate-500 uppercase tracking-wider">Spendable XP</p>
+          <p id="store-balance" class="text-3xl font-bold text-forge-green">0</p>
+          <p id="store-balance-sub" class="text-xs text-slate-600 mt-0.5">of <span id="store-total-earned">0</span> total earned</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
+        <div class="stat-card rounded-2xl border border-forge-border p-5 shadow-lg">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Available Prizes</h2>
+            <span class="text-xs text-slate-600">Placeholder items — prices TBD</span>
+          </div>
+          <div id="store-catalog" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        </div>
+
+        <div class="space-y-5">
+          <div class="stat-card rounded-2xl border border-forge-border p-5 shadow-lg">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">My Rewards</h2>
+            <ul id="rewards-list" class="space-y-2 max-h-[320px] overflow-y-auto"></ul>
+            <div id="rewards-empty" class="text-center py-8">
+              <p class="text-2xl mb-2">🎁</p>
+              <p class="text-sm text-slate-500">No rewards yet — complete quests and redeem prizes!</p>
+            </div>
+          </div>
+          <div class="stat-card rounded-2xl border border-forge-border/60 p-4 text-center">
+            <p class="text-xs text-slate-500 leading-relaxed">
+              XP spent here doesn't lower your level. Earn XP from quests, then spend your balance on prizes!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team View -->
+    <div id="view-team" class="hidden space-y-5">
+
+      <div class="stat-card rounded-2xl border border-forge-purple/20 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div class="flex items-center gap-3 flex-1">
+          <div class="w-10 h-10 rounded-xl bg-forge-purple/15 border border-forge-purple/30 flex items-center justify-center text-lg">🤝</div>
+          <p class="text-sm text-slate-400">
+            <span class="text-forge-purple font-medium">Team mode prototype</span> — add classmates, create a party, assign tasks. Real-time sync with friends is coming next!
+          </p>
+        </div>
+        <button id="add-connection-btn" type="button" class="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold border border-forge-blue/40 text-forge-blue hover:bg-forge-blue/10 transition">
+          + Add Connection
+        </button>
+      </div>
+
+      <!-- Connections -->
+      <div class="stat-card rounded-2xl border border-forge-border p-5 shadow-lg">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Connections</h2>
+          <span id="connection-count" class="text-xs text-slate-500">0 connected</span>
+        </div>
+        <div id="connections-list" class="flex flex-wrap gap-2 min-h-[48px]"></div>
+        <div id="connections-empty" class="hidden text-center py-6">
+          <p class="text-slate-500 text-sm">No connections yet — add your classmates or project teammates!</p>
+        </div>
+      </div>
+
+      <!-- Teams -->
+      <div class="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-5">
+        <div class="stat-card rounded-2xl border border-forge-border p-5 shadow-lg">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Your Parties</h2>
+            <button id="create-team-btn" type="button" class="text-xs font-semibold text-forge-purple hover:text-forge-blue transition">+ New</button>
+          </div>
+          <div id="teams-list" class="space-y-2"></div>
+          <div id="teams-empty" class="hidden text-center py-8">
+            <p class="text-3xl mb-2">🏰</p>
+            <p class="text-slate-500 text-sm">Create a party for your group project</p>
+          </div>
+        </div>
+
+        <div id="team-detail" class="stat-card rounded-2xl border border-forge-border p-5 shadow-lg hidden">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span id="team-detail-emoji" class="text-2xl">📋</span>
+                <h2 id="team-detail-name" class="text-xl font-bold text-slate-100">Team</h2>
+              </div>
+              <p id="team-detail-desc" class="text-sm text-slate-500"></p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button id="copy-invite-btn" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-forge-border text-slate-400 hover:text-forge-green hover:border-forge-green/40 transition" title="Copy invite code">
+                Code: <span id="team-invite-code" class="text-forge-purple font-mono"></span>
+              </button>
+              <button id="delete-team-btn" type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition" title="Delete party" aria-label="Delete party">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Team members -->
+          <div class="mb-5">
+            <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">Party Members</p>
+            <div id="team-members" class="flex flex-wrap gap-2 mb-3"></div>
+            <div id="team-contributions" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+          </div>
+
+          <!-- Team progress -->
+          <div class="mb-6 p-4 rounded-xl bg-forge-bg/60 border border-forge-border">
+            <div class="flex justify-between text-xs mb-2">
+              <span class="text-slate-400">Team Progress</span>
+              <span id="team-progress-text" class="text-forge-purple font-medium">0 / 0 tasks</span>
+            </div>
+            <div class="h-3 rounded-full bg-forge-border overflow-hidden">
+              <div id="team-progress-bar" class="h-full rounded-full bg-gradient-to-r from-forge-purple to-forge-blue transition-all duration-500 team-progress-glow" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- Add team quest -->
+          <form id="add-team-quest-form" class="flex flex-col sm:flex-row gap-3 mb-5">
+            <input id="team-quest-input" type="text" placeholder="Add a team task..." maxlength="120"
+              class="flex-1 px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-100 placeholder-slate-500 focus:outline-none focus:border-forge-purple/60 focus:ring-1 focus:ring-forge-purple/30 transition" autocomplete="off" />
+            <select id="team-assignee-select" class="px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-200 focus:outline-none focus:border-forge-blue/60 transition cursor-pointer"></select>
+            <select id="team-difficulty-select" class="px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-200 focus:outline-none focus:border-forge-green/60 transition cursor-pointer">
+              <option value="easy">Easy · 10 XP</option>
+              <option value="medium" selected>Medium · 25 XP</option>
+              <option value="hard">Hard · 50 XP</option>
+            </select>
+            <button type="submit" class="px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-forge-purple to-forge-blue text-white hover:shadow-neon transition whitespace-nowrap">+ Assign</button>
+          </form>
+
+          <ul id="team-quest-list" class="space-y-2"></ul>
+          <div id="team-quests-empty" class="hidden text-center py-10">
+            <p class="text-slate-500 text-sm">No team tasks yet — split up the work and assign quests!</p>
+          </div>
+        </div>
+
+        <div id="team-detail-placeholder" class="stat-card rounded-2xl border border-dashed border-forge-border p-5 flex flex-col items-center justify-center text-center min-h-[320px]">
+          <p class="text-4xl mb-3">👥</p>
+          <p class="text-slate-400 font-medium">Select a party</p>
+          <p class="text-sm text-slate-500 mt-1 max-w-xs">Pick a team on the left or create one to start assigning group project tasks.</p>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- /teen-app -->
+
+    <!-- Parent App -->
+    <div id="parent-app" class="hidden space-y-5">
+
+      <div class="stat-card rounded-2xl border border-amber-500/20 p-4 flex items-start gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-lg shrink-0">👀</div>
+        <div>
+          <p class="text-sm text-amber-200/90 font-medium">Prototype parent view</p>
+          <p class="text-xs text-slate-500 mt-1 leading-relaxed">Assign and edit quests for your teen. See their XP, streak, and all activity. Switch to <strong class="text-slate-400">Teen</strong> to preview what they see. Real separate-device sync comes later.</p>
+        </div>
+      </div>
+
+      <!-- Teen overview -->
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
+        <div class="stat-card rounded-2xl border border-forge-border p-5">
+          <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Teen Overview</h2>
+          <div class="flex items-center gap-4 mb-5 p-4 rounded-xl bg-forge-bg/60 border border-forge-border">
+            <div id="parent-teen-avatar" class="w-14 h-14 rounded-2xl bg-gradient-to-br from-forge-blue/20 to-forge-green/20 border border-forge-border flex items-center justify-center text-3xl">⚔️</div>
+            <div class="min-w-0">
+              <p id="parent-teen-name" class="text-xl font-bold text-slate-100 truncate">Adventurer</p>
+              <p id="parent-teen-title" class="text-forge-blue text-sm truncate">Quest Novice</p>
+              <p id="parent-teen-bio" class="text-xs text-slate-500 mt-1 line-clamp-2"></p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-3 rounded-xl bg-forge-bg/60 border border-forge-border text-center">
+              <p class="text-xs text-slate-500 uppercase">Level</p>
+              <p id="parent-stat-level" class="text-2xl font-bold text-forge-blue">1</p>
+            </div>
+            <div class="p-3 rounded-xl bg-forge-bg/60 border border-forge-border text-center">
+              <p class="text-xs text-slate-500 uppercase">Total XP</p>
+              <p id="parent-stat-xp" class="text-2xl font-bold text-forge-green">0</p>
+            </div>
+            <div class="p-3 rounded-xl bg-forge-bg/60 border border-forge-border text-center">
+              <p class="text-xs text-slate-500 uppercase">Streak</p>
+              <p id="parent-stat-streak" class="text-2xl font-bold text-orange-400">0</p>
+            </div>
+            <div class="p-3 rounded-xl bg-forge-bg/60 border border-forge-border text-center">
+              <p class="text-xs text-slate-500 uppercase">Completed</p>
+              <p id="parent-stat-completed" class="text-2xl font-bold text-forge-green">0</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card rounded-2xl border border-forge-border p-5">
+          <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Assign Quest</h2>
+          <form id="parent-assign-form" class="space-y-3">
+            <input id="parent-quest-input" type="text" placeholder="e.g. Clean room, Finish math hw..." maxlength="120"
+              class="w-full px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500/50 transition" autocomplete="off" />
+            <select id="parent-difficulty-select" class="w-full px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-200 focus:outline-none focus:border-amber-500/50 transition cursor-pointer">
+              <option value="easy">Easy · 10 XP</option>
+              <option value="medium" selected>Medium · 25 XP</option>
+              <option value="hard">Hard · 50 XP</option>
+            </select>
+            <select id="parent-recurrence-select" class="w-full px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-200 focus:outline-none focus:border-forge-purple/50 transition cursor-pointer">
+              <option value="once" selected>One-time</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="weekdays">Weekdays (Mon–Fri)</option>
+              <option value="weekends">Weekends only</option>
+              <option value="monthly">Monthly</option>
+            </select>
+            <button type="submit" class="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-amber-500 to-amber-600 text-forge-bg hover:shadow-lg transition">+ Assign to Teen</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <!-- Parent-managed quests -->
+        <div class="stat-card rounded-2xl border border-forge-border p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold text-amber-400/90 uppercase tracking-wider">Your Assigned Quests</h2>
+            <span id="parent-managed-count" class="text-xs text-slate-500">0 quests</span>
+          </div>
+          <ul id="parent-managed-list" class="space-y-2 min-h-[100px]"></ul>
+          <div id="parent-managed-empty" class="hidden text-center py-8 text-sm text-slate-500">No assigned quests yet — add one above!</div>
+        </div>
+
+        <!-- Activity feed -->
+        <div class="stat-card rounded-2xl border border-forge-border p-5">
+          <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Recent Activity</h2>
+          <ul id="activity-feed" class="space-y-2 max-h-[360px] overflow-y-auto"></ul>
+          <div id="activity-empty" class="hidden text-center py-8 text-sm text-slate-500">Activity will show up as your teen uses QuestForge.</div>
+        </div>
+      </div>
+
+      <!-- All quests monitor -->
+        <div class="stat-card rounded-2xl border border-forge-border p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">All Teen Quests</h2>
+            <span id="parent-all-count" class="text-xs text-slate-500">0 total</span>
+          </div>
+          <ul id="parent-all-quests" class="space-y-2"></ul>
+          <div id="parent-all-empty" class="hidden text-center py-8 text-sm text-slate-500">No quests yet — assign one or let your teen add their own.</div>
+        </div>
+
+        <div class="stat-card rounded-2xl border border-forge-border p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Store Redemptions</h2>
+            <span id="parent-redeem-count" class="text-xs text-slate-500">0 rewards</span>
+          </div>
+          <ul id="parent-redeem-list" class="space-y-2"></ul>
+          <div id="parent-redeem-empty" class="hidden text-center py-6 text-sm text-slate-500">No store redemptions yet.</div>
+        </div>
+      </div>
+
+  </main>
+
+  </div><!-- /app-root -->
+
+  <!-- XP Popup container (must NOT cover the screen) -->
+  <div id="xp-popup-container" aria-hidden="true"></div>
+
+  <!-- Redeem Toast -->
+  <div id="redeem-toast" class="fixed top-24 left-1/2 -translate-x-1/2 z-[100] hidden pointer-events-none">
+    <div class="px-6 py-3 rounded-2xl bg-gradient-to-r from-forge-purple to-forge-blue text-white font-bold text-lg shadow-neon redeem-toast-animate">
+      🎁 Redeemed: <span id="redeem-toast-name"></span>
+    </div>
+  </div>
+
+  <!-- Level Up Toast -->
+  <div id="level-up-toast" class="fixed top-24 left-1/2 -translate-x-1/2 z-[100] hidden">
+    <div class="px-6 py-3 rounded-2xl bg-gradient-to-r from-forge-blue to-forge-green text-forge-bg font-bold text-lg shadow-neon-green level-up-pulse">
+      🎉 Level Up! You're now Level <span id="level-up-number"></span>
+    </div>
+  </div>
+
+  <!-- Add Connection Modal -->
+  <div id="connection-modal" class="fixed inset-0 z-[200] hidden" style="display:none" role="dialog" aria-modal="true" aria-labelledby="connection-modal-title">
+    <div class="connection-backdrop modal-backdrop absolute inset-0 bg-forge-bg/70 backdrop-blur-sm"></div>
+    <div class="relative flex items-center justify-center min-h-full p-4">
+      <div class="modal-panel stat-card w-full max-w-md rounded-2xl border border-forge-border shadow-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-forge-border">
+          <h2 id="connection-modal-title" class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Add Connection</h2>
+          <button type="button" class="connection-close-btn w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-forge-border/50 transition" aria-label="Close">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form id="connection-form" class="p-5 space-y-4">
+          <p class="text-sm text-slate-400">Add a classmate or teammate. They'll appear in your parties until real accounts sync up.</p>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Their Avatar</label>
+            <div id="connection-avatar-picker" class="grid grid-cols-6 gap-2"></div>
+          </div>
+          <div>
+            <label for="connection-name-input" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Name</label>
+            <input id="connection-name-input" type="text" maxlength="32" placeholder="e.g. Jordan, Sam, Riley"
+              class="w-full px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-100 placeholder-slate-500 focus:outline-none focus:border-forge-blue/60 transition" />
+          </div>
+          <button type="submit" class="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-forge-blue to-forge-green text-forge-bg hover:shadow-neon-green transition">Add Connection</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Team Modal -->
+  <div id="team-modal" class="fixed inset-0 z-[200] hidden" style="display:none" role="dialog" aria-modal="true" aria-labelledby="team-modal-title">
+    <div class="team-backdrop modal-backdrop absolute inset-0 bg-forge-bg/70 backdrop-blur-sm"></div>
+    <div class="relative flex items-center justify-center min-h-full p-4">
+      <div class="modal-panel stat-card w-full max-w-md rounded-2xl border border-forge-border shadow-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-forge-border">
+          <h2 id="team-modal-title" class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Create Party</h2>
+          <button type="button" class="team-close-btn w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-forge-border/50 transition" aria-label="Close">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form id="team-form" class="p-5 space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Party Icon</label>
+            <div id="team-emoji-picker" class="flex flex-wrap gap-2"></div>
+          </div>
+          <div>
+            <label for="team-name-input" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Party Name</label>
+            <input id="team-name-input" type="text" maxlength="48" placeholder="e.g. History Final Project"
+              class="w-full px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-100 placeholder-slate-500 focus:outline-none focus:border-forge-purple/60 transition" />
+          </div>
+          <div>
+            <label for="team-desc-input" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Description <span class="normal-case text-slate-600">(optional)</span></label>
+            <input id="team-desc-input" type="text" maxlength="80" placeholder="What's this team working on?"
+              class="w-full px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-100 placeholder-slate-500 focus:outline-none focus:border-forge-purple/60 transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Add Members</label>
+            <p class="text-xs text-slate-600 mb-2">You're always on the team. Pick connections to join:</p>
+            <div id="team-member-picker" class="space-y-2 max-h-36 overflow-y-auto"></div>
+          </div>
+          <button type="submit" class="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-forge-purple to-forge-blue text-white hover:shadow-neon transition">Create Party</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div id="profile-modal" class="fixed inset-0 z-[200] hidden" style="display:none" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+    <div id="profile-backdrop" class="modal-backdrop absolute inset-0 bg-forge-bg/70 backdrop-blur-sm"></div>
+    <div class="relative z-10 flex items-center justify-center min-h-full p-4 sm:p-6 pointer-events-none">
+      <div class="modal-panel stat-card w-full max-w-lg rounded-2xl border border-forge-border shadow-2xl overflow-hidden pointer-events-auto">
+
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-forge-border">
+          <h2 id="profile-modal-title" class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Your Profile</h2>
+          <button id="profile-close-btn" type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-forge-border/50 transition" aria-label="Close profile">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- View Mode -->
+        <div id="profile-view" class="p-5 sm:p-6">
+          <div class="text-center mb-6">
+            <div id="profile-view-avatar" class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-forge-blue/20 to-forge-green/20 border-2 border-forge-blue/30 flex items-center justify-center text-4xl shadow-neon mb-4">
+              ⚔️
+            </div>
+            <h3 id="profile-view-name" class="text-2xl font-bold text-slate-100">Adventurer</h3>
+            <p id="profile-view-title" class="text-forge-blue font-medium mt-1">Quest Novice</p>
+            <p id="profile-view-bio" class="text-sm text-slate-400 mt-3 max-w-sm mx-auto leading-relaxed"></p>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="p-3 rounded-xl bg-forge-bg/60 border border-forge-border text-center">
+              <p class="text-xs text-slate-500 uppercase">Level</p>
+              <p id="profile-view-level" class="text-xl font-bold text-forge-blue">1</p>
+            </div>
+            <div class="p-3 rounded-xl bg-forge-bg/60 border border-forge-border text-center">
+              <p class="text-xs text-slate-500 uppercase">Streak</p>
+              <p id="profile-view-streak" class="text-xl font-bold text-orange-400">0</p>
+            </div>
+            <div class="p-3 rounded-xl bg-forge-bg/60 border border-forge-border text-center">
+              <p class="text-xs text-slate-500 uppercase">Quests</p>
+              <p id="profile-view-quests" class="text-xl font-bold text-forge-green">0</p>
+            </div>
+          </div>
+
+          <p id="profile-view-created" class="text-xs text-slate-600 text-center mb-5"></p>
+
+          <button
+            id="profile-edit-btn"
+            type="button"
+            class="w-full py-3 rounded-xl font-semibold border border-forge-blue/40 text-forge-blue hover:bg-forge-blue/10 transition"
+          >
+            Edit Profile
+          </button>
+        </div>
+
+        <!-- Edit Mode -->
+        <form id="profile-edit" class="hidden p-5 sm:p-6">
+          <p class="text-sm text-slate-400 mb-5 text-center">Customize your adventurer identity. More options coming soon!</p>
+
+          <div class="mb-5">
+            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Choose Avatar</label>
+            <div id="avatar-picker" class="grid grid-cols-6 gap-2">
+              <!-- avatar options rendered by JS -->
+            </div>
+          </div>
+
+          <div class="space-y-4 mb-6">
+            <div>
+              <label for="profile-name-input" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Display Name</label>
+              <input
+                id="profile-name-input"
+                type="text"
+                maxlength="32"
+                placeholder="e.g. Nova, Alex, ShadowKnight"
+                class="w-full px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-100 placeholder-slate-500 focus:outline-none focus:border-forge-blue/60 focus:ring-1 focus:ring-forge-blue/30 transition"
+              />
+            </div>
+            <div>
+              <label for="profile-title-input" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Adventurer Title</label>
+              <input
+                id="profile-title-input"
+                type="text"
+                maxlength="40"
+                placeholder="e.g. Homework Slayer, Gym Warrior"
+                class="w-full px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-100 placeholder-slate-500 focus:outline-none focus:border-forge-green/60 focus:ring-1 focus:ring-forge-green/30 transition"
+              />
+            </div>
+            <div>
+              <label for="profile-bio-input" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Motto / Bio</label>
+              <textarea
+                id="profile-bio-input"
+                rows="3"
+                maxlength="160"
+                placeholder="What drives your quests?"
+                class="w-full px-4 py-3 rounded-xl bg-forge-bg border border-forge-border text-slate-100 placeholder-slate-500 focus:outline-none focus:border-forge-blue/60 focus:ring-1 focus:ring-forge-blue/30 transition resize-none"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              id="profile-cancel-btn"
+              type="button"
+              class="flex-1 py-3 rounded-xl font-semibold border border-forge-border text-slate-400 hover:text-slate-200 hover:bg-forge-border/30 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="flex-1 py-3 rounded-xl font-semibold bg-gradient-to-r from-forge-blue to-forge-green text-forge-bg hover:shadow-neon-green transition"
+            >
+              Save Profile
+            </button>
+          </div>
+          <button
+            id="profile-skip-btn"
+            type="button"
+            class="hidden w-full mt-2 py-2 text-sm text-slate-500 hover:text-slate-300 transition"
+          >
+            Skip for now
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'questforge_data';
+    const XP_PER_LEVEL = 100;
+    const DIFFICULTY_XP = { easy: 10, medium: 25, hard: 50 };
+    const DIFFICULTY_LABELS = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+    const RECURRENCE_OPTIONS = {
+      once: { label: 'One-time', short: 'Once', waiting: null },
+      daily: { label: 'Daily', short: 'Daily', waiting: null },
+      weekly: { label: 'Weekly', short: 'Weekly', waiting: null },
+      weekdays: { label: 'Weekdays', short: 'Mon–Fri', waiting: 'Available weekdays (Mon–Fri)' },
+      weekends: { label: 'Weekends', short: 'Weekends', waiting: 'Available weekends (Sat–Sun)' },
+      monthly: { label: 'Monthly', short: 'Monthly', waiting: null }
+    };
+    const AVATAR_OPTIONS = ['⚔️', '🛡️', '🏹', '🔮', '⚡', '🐉', '🦊', '🐺', '👾', '🎮', '📚', '🏆', '🌟', '🔥', '💎', '🚀'];
+    const TEAM_EMOJIS = ['📋', '🏫', '📚', '🧪', '🎨', '💻', '🏆', '🚀', '⚗️', '📝', '🤝', '🎯'];
+    const SELF_ID = 'self';
+    const STORE_CATALOG = [
+      { id: 'store_pizza', emoji: '🍕', name: 'Pizza Night', description: 'Homemade pizza night with toppings of your choice', cost: 50, tag: 'Treat' },
+      { id: 'store_screen', emoji: '🎮', name: 'Extra Screen Time', description: '1 bonus hour of gaming or streaming', cost: 75, tag: 'Privilege' },
+      { id: 'store_movie', emoji: '🎬', name: 'Movie Pick', description: 'You choose the movie for family night. After redeeming, browse what\'s playing at Regal.', cost: 60, tag: 'Privilege', redeemUrl: 'https://www.regmovies.com/movies', redeemLabel: 'Browse Regal Movies' },
+      { id: 'store_latte', emoji: '🧋', name: 'Boba Run', description: 'Trip to get boba or a fancy drink', cost: 40, tag: 'Treat' },
+      { id: 'store_sleep', emoji: '😴', name: 'Sleep-In Pass', description: 'Skip morning chore one time this week', cost: 80, tag: 'Privilege' },
+      { id: 'store_gift', emoji: '🎁', name: 'Roblox Gift Card', description: '$10 Roblox card — parent provides the code. After redeeming, use the button in My Rewards.', cost: 150, tag: 'Reward', redeemUrl: 'https://www.roblox.com/redeem', redeemLabel: 'Redeem on Roblox' },
+      { id: 'store_friend', emoji: '📱', name: 'Friend Hangout', description: 'Extra hour with friends (parent-approved)', cost: 100, tag: 'Social' },
+      { id: 'store_skip', emoji: '⏭️', name: 'Chore Skip', description: 'Skip one assigned chore this week', cost: 90, tag: 'Privilege' }
+    ];
+    const DEFAULT_PROFILE = {
+      displayName: '',
+      adventurerTitle: '',
+      bio: '',
+      avatar: '⚔️',
+      createdAt: null,
+      updatedAt: null,
+      extras: {}
+    };
+    const DEFAULT_PARENT = { displayName: 'Parent', avatar: '👨‍👩‍👧' };
+
+    function padDate(n) {
+      return String(n).padStart(2, '0');
+    }
+
+    function normalizeQuest(quest) {
+      if (!quest.recurrence || !RECURRENCE_OPTIONS[quest.recurrence]) {
+        quest.recurrence = 'once';
+      }
+      return quest;
+    }
+
+    function getWeekKey(date) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+      const week1 = new Date(d.getFullYear(), 0, 4);
+      const weekNum = 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+      return `${d.getFullYear()}-W${padDate(weekNum)}`;
+    }
+
+    function getPeriodKey(recurrence, date = new Date()) {
+      const rec = recurrence || 'once';
+      const y = date.getFullYear();
+      const m = date.getMonth() + 1;
+      const day = date.getDate();
+      const dow = date.getDay();
+
+      switch (rec) {
+        case 'once': return 'once';
+        case 'daily': return `${y}-${padDate(m)}-${padDate(day)}`;
+        case 'weekly': return getWeekKey(date);
+        case 'weekdays':
+          if (dow === 0 || dow === 6) return null;
+          return `${y}-${padDate(m)}-${padDate(day)}`;
+        case 'weekends':
+          if (dow !== 0 && dow !== 6) return null;
+          return `${y}-${padDate(m)}-${padDate(day)}`;
+        case 'monthly': return `${y}-${padDate(m)}`;
+        default: return 'once';
+      }
+    }
+
+    function isRecurrenceAvailableToday(recurrence) {
+      const rec = recurrence || 'once';
+      if (rec === 'once' || rec === 'daily' || rec === 'weekly' || rec === 'monthly') return true;
+      const dow = new Date().getDay();
+      if (rec === 'weekdays') return dow >= 1 && dow <= 5;
+      if (rec === 'weekends') return dow === 0 || dow === 6;
+      return true;
+    }
+
+    function getRecurrenceShort(recurrence) {
+      return RECURRENCE_OPTIONS[recurrence || 'once']?.short || 'Once';
+    }
+
+    function processRecurringQuest(quest) {
+      normalizeQuest(quest);
+      if (quest.recurrence === 'once' || !quest.completed) return;
+
+      const currentPeriod = getPeriodKey(quest.recurrence);
+      const completedPeriod = quest.completedPeriod
+        || (quest.completedAt ? getPeriodKey(quest.recurrence, new Date(quest.completedAt)) : null);
+
+      if (currentPeriod && completedPeriod && currentPeriod !== completedPeriod) {
+        quest.completed = false;
+        quest.completedAt = null;
+        quest.completedPeriod = null;
+      }
+    }
+
+    function processAllRecurringQuests() {
+      let resetCount = 0;
+      [...state.quests, ...state.parentQuests].forEach(quest => {
+        const wasDone = quest.completed;
+        processRecurringQuest(quest);
+        if (wasDone && !quest.completed) resetCount += 1;
+      });
+      if (resetCount > 0) saveState();
+    }
+
+    function defaultState() {
+      return {
+        quests: [],
+        parentQuests: [],
+        activityLog: [],
+        totalXP: 0,
+        streak: 0,
+        lastActiveDate: null,
+        questsCompleted: 0,
+        profile: { ...DEFAULT_PROFILE },
+        parent: { ...DEFAULT_PARENT },
+        connections: [],
+        teams: [],
+        activeView: 'solo',
+        activeRole: 'teen',
+        selectedTeamId: null,
+        xpSpent: 0,
+        redemptions: []
+      };
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return defaultState();
+        const parsed = JSON.parse(raw);
+        return {
+          ...defaultState(),
+          ...parsed,
+          profile: { ...DEFAULT_PROFILE, ...(parsed.profile || {}) },
+          parent: { ...DEFAULT_PARENT, ...(parsed.parent || {}) },
+          quests: (parsed.quests || []).map(normalizeQuest),
+          parentQuests: (parsed.parentQuests || []).map(normalizeQuest),
+          activityLog: parsed.activityLog || [],
+          xpSpent: parsed.xpSpent || 0,
+          redemptions: parsed.redemptions || [],
+          connections: parsed.connections || [],
+          teams: (parsed.teams || []).map(team => ({
+            ...team,
+            memberIds: team.memberIds?.includes(SELF_ID) ? team.memberIds : [SELF_ID, ...(team.memberIds || [])],
+            quests: team.quests || []
+          }))
+        };
+      } catch {
+        return defaultState();
+      }
+    }
+
+    let state = loadState();
+    let profileEditDraft = null;
+    let isFirstProfileSetup = false;
+    let connectionAvatarDraft = '🦊';
+    let teamEmojiDraft = '📋';
+    let teamMemberDraft = new Set();
+
+    function logActivity(type, data = {}) {
+      state.activityLog.unshift({
+        id: generateId(),
+        type,
+        ...data,
+        timestamp: new Date().toISOString()
+      });
+      if (state.activityLog.length > 80) state.activityLog.length = 80;
+    }
+
+    function formatActivityTime(iso) {
+      const d = new Date(iso);
+      const now = new Date();
+      const diffMs = now - d;
+      if (diffMs < 60000) return 'Just now';
+      if (diffMs < 3600000) return `${Math.floor(diffMs / 60000)}m ago`;
+      if (diffMs < 86400000) return `${Math.floor(diffMs / 3600000)}h ago`;
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+
+    function getActivityMessage(entry) {
+      const name = getDisplayName();
+      const t = entry.questTitle || 'a quest';
+      const map = {
+        teen_quest_added: `${name} added personal quest "${t}"`,
+        teen_quest_completed: `${name} completed "${t}" (+${entry.xp} XP)`,
+        teen_quest_uncompleted: `${name} unchecked "${t}"`,
+        teen_quest_deleted: `${name} deleted personal quest "${t}"`,
+        parent_quest_assigned: `You assigned "${t}" to ${name}`,
+        parent_quest_edited: `You edited assigned quest → "${t}"`,
+        parent_quest_deleted: `You removed assigned quest "${t}"`,
+        profile_updated: `${name} updated their profile`,
+        store_redeemed: `${name} redeemed "${entry.prizeName}" for ${entry.xp} XP`
+      };
+      return map[entry.type] || entry.type;
+    }
+
+    function getSpendableXP() {
+      return Math.max(0, state.totalXP - (state.xpSpent || 0));
+    }
+
+    function getStoreItem(itemId) {
+      return STORE_CATALOG.find(item => item.id === itemId);
+    }
+
+    function getRedemptionLink(redemption) {
+      if (redemption.redeemUrl) {
+        return { url: redemption.redeemUrl, label: redemption.redeemLabel || 'Redeem Online' };
+      }
+      const item = getStoreItem(redemption.itemId);
+      if (item?.redeemUrl) {
+        return { url: item.redeemUrl, label: item.redeemLabel || 'Redeem Online' };
+      }
+      return null;
+    }
+
+    function redeemPrize(itemId) {
+      const item = getStoreItem(itemId);
+      if (!item) return false;
+
+      const balance = getSpendableXP();
+      if (balance < item.cost) return false;
+
+      state.xpSpent = (state.xpSpent || 0) + item.cost;
+      state.redemptions.unshift({
+        id: generateId(),
+        itemId: item.id,
+        name: item.name,
+        emoji: item.emoji,
+        cost: item.cost,
+        redeemedAt: new Date().toISOString(),
+        ...(item.redeemUrl ? { redeemUrl: item.redeemUrl, redeemLabel: item.redeemLabel } : {})
+      });
+
+      logActivity('store_redeemed', { prizeName: item.name, xp: item.cost });
+      saveState();
+      showRedeemToast(item.name, item.redeemUrl ? item.redeemLabel : null);
+      render();
+      if (state.activeView === 'store') renderStoreView();
+      if (state.activeRole === 'parent') renderParentView();
+      return true;
+    }
+
+    function showRedeemToast(name, redeemHint) {
+      const toast = document.getElementById('redeem-toast');
+      const inner = toast.querySelector('div');
+      document.getElementById('redeem-toast-name').textContent = redeemHint
+        ? `${name} — tap "${redeemHint}" in My Rewards`
+        : name;
+      toast.classList.remove('hidden');
+      inner.classList.remove('redeem-toast-animate');
+      void inner.offsetWidth;
+      inner.classList.add('redeem-toast-animate');
+      setTimeout(() => toast.classList.add('hidden'), 2500);
+    }
+
+    function renderStoreCatalog() {
+      const catalog = document.getElementById('store-catalog');
+      if (!catalog) return;
+      catalog.innerHTML = '';
+      const balance = getSpendableXP();
+
+      STORE_CATALOG.forEach(item => {
+        const canAfford = balance >= item.cost;
+        const card = document.createElement('div');
+        card.className = `store-card rounded-xl border border-forge-border bg-forge-bg/50 p-4 flex flex-col${canAfford ? '' : ' store-card-disabled'}`;
+
+        card.innerHTML = `
+          <div class="flex items-start gap-3 mb-3">
+            <span class="text-3xl shrink-0">${item.emoji}</span>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-bold text-slate-100">${escapeHtml(item.name)}</h3>
+                <span class="text-xs px-2 py-0.5 rounded-full border border-forge-border text-slate-500">${escapeHtml(item.tag)}</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">${escapeHtml(item.description)}</p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between mt-auto pt-3 border-t border-forge-border/60">
+            <span class="text-forge-green font-bold">${item.cost} XP</span>
+            <button type="button" class="redeem-btn px-4 py-2 rounded-lg text-sm font-semibold transition ${canAfford
+              ? 'bg-gradient-to-r from-forge-blue to-forge-green text-forge-bg hover:shadow-neon-green'
+              : 'bg-forge-border text-slate-500 cursor-not-allowed'}" ${canAfford ? '' : 'disabled'}>
+              ${canAfford ? 'Redeem' : 'Need more XP'}
+            </button>
+          </div>
+        `;
+
+        const btn = card.querySelector('.redeem-btn');
+        if (canAfford) {
+          btn.addEventListener('click', () => {
+            if (confirm(`Redeem "${item.name}" for ${item.cost} XP?`)) {
+              redeemPrize(item.id);
+            }
+          });
+        }
+
+        catalog.appendChild(card);
+      });
+    }
+
+    function renderRewardsList() {
+      const list = document.getElementById('rewards-list');
+      const empty = document.getElementById('rewards-empty');
+      if (!list) return;
+
+      list.innerHTML = '';
+      const redemptions = state.redemptions || [];
+
+      if (redemptions.length === 0) {
+        empty.classList.remove('hidden');
+      } else {
+        empty.classList.add('hidden');
+        redemptions.forEach(r => {
+          const li = document.createElement('li');
+          const date = new Date(r.redeemedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+          const link = getRedemptionLink(r);
+          li.className = 'p-3 rounded-xl border border-forge-green/20 bg-forge-green/5';
+
+          li.innerHTML = `
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">${r.emoji}</span>
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold text-slate-200 truncate">${escapeHtml(r.name)}</p>
+                <p class="text-xs text-slate-500">${date} · ${r.cost} XP</p>
+              </div>
+              <span class="text-xs font-bold text-forge-green shrink-0">✓</span>
+            </div>
+            ${link ? `
+              <a href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer"
+                class="reward-redeem-link mt-3 flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-r from-forge-purple to-forge-blue text-white hover:shadow-neon transition">
+                ${escapeHtml(link.label)} →
+              </a>
+            ` : ''}
+          `;
+          list.appendChild(li);
+        });
+      }
+    }
+
+    function renderStoreView() {
+      const balance = getSpendableXP();
+      document.getElementById('store-balance').textContent = balance.toLocaleString();
+      document.getElementById('store-total-earned').textContent = state.totalXP.toLocaleString();
+      renderStoreCatalog();
+      renderRewardsList();
+    }
+
+    function initStore() {
+      document.getElementById('tab-store').addEventListener('click', () => switchView('store'));
+      document.getElementById('sidebar-store-link')?.addEventListener('click', () => switchView('store'));
+    }
+
+    function switchRole(role) {
+      state.activeRole = role;
+      saveState();
+
+      const isTeen = role === 'teen';
+      document.body.classList.toggle('parent-mode', !isTeen);
+      document.getElementById('teen-app').classList.toggle('hidden', !isTeen);
+      document.getElementById('parent-app').classList.toggle('hidden', isTeen);
+      document.getElementById('teen-header-stats').classList.toggle('hidden', !isTeen);
+      document.getElementById('parent-header-label').classList.toggle('hidden', isTeen);
+      document.getElementById('profile-btn').classList.toggle('hidden', !isTeen);
+
+      document.querySelectorAll('#role-switcher .role-tab').forEach(btn => {
+        const active = btn.dataset.role === role;
+        btn.classList.toggle('active-teen', active && role === 'teen');
+        btn.classList.toggle('active-parent', active && role === 'parent');
+        btn.classList.toggle('text-slate-500', !active);
+        btn.setAttribute('aria-selected', active);
+      });
+
+      document.getElementById('header-tagline').textContent = isTeen
+        ? 'Level up your life, one quest at a time'
+        : 'Parent dashboard — preview mode';
+
+      if (isTeen) {
+        render();
+        if (state.activeView === 'team') renderTeamView();
+        if (state.activeView === 'store') renderStoreView();
+      } else {
+        renderParentView();
+      }
+    }
+
+    function hasProfile() {
+      return Boolean(state.profile.displayName.trim());
+    }
+
+    function getDisplayName() {
+      return hasProfile() ? state.profile.displayName.trim() : 'Adventurer';
+    }
+
+    function getAdventurerTitle() {
+      return state.profile.adventurerTitle.trim() || (hasProfile() ? 'Quest Forger' : 'Set up profile');
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function getLevel(totalXP) {
+      return Math.floor(totalXP / XP_PER_LEVEL) + 1;
+    }
+
+    function getXPInCurrentLevel(totalXP) {
+      return totalXP % XP_PER_LEVEL;
+    }
+
+    function todayString() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function yesterdayString() {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      return d.toISOString().split('T')[0];
+    }
+
+    function updateStreak() {
+      const today = todayString();
+      const yesterday = yesterdayString();
+
+      if (state.lastActiveDate === today) return;
+
+      if (!state.lastActiveDate) {
+        state.streak = 1;
+      } else if (state.lastActiveDate === yesterday) {
+        state.streak += 1;
+      } else {
+        state.streak = 1;
+      }
+      state.lastActiveDate = today;
+    }
+
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    function generateInviteCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      return code;
+    }
+
+    function getConnection(id) {
+      return state.connections.find(c => c.id === id);
+    }
+
+    function getMemberInfo(memberId) {
+      if (memberId === SELF_ID) {
+        return {
+          id: SELF_ID,
+          displayName: getDisplayName(),
+          avatar: state.profile.avatar || '⚔️',
+          isYou: true
+        };
+      }
+      const conn = getConnection(memberId);
+      if (!conn) return { id: memberId, displayName: 'Unknown', avatar: '👤', isYou: false };
+      return { ...conn, isYou: false };
+    }
+
+    function getSelectedTeam() {
+      return state.teams.find(t => t.id === state.selectedTeamId) || null;
+    }
+
+    function switchView(view) {
+      state.activeView = view;
+      saveState();
+
+      document.getElementById('view-solo').classList.toggle('hidden', view !== 'solo');
+      document.getElementById('view-team').classList.toggle('hidden', view !== 'team');
+      document.getElementById('view-store').classList.toggle('hidden', view !== 'store');
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.view === view);
+      });
+
+      if (view === 'team') renderTeamView();
+      if (view === 'store') renderStoreView();
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('hidden');
+      el.classList.add('is-open');
+      el.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.add('hidden');
+      el.classList.remove('is-open');
+      el.style.display = 'none';
+      const anyOpen = ['profile-modal', 'connection-modal', 'team-modal'].some(
+        mid => document.getElementById(mid)?.classList.contains('is-open')
+      );
+      if (!anyOpen) document.body.style.overflow = '';
+    }
+
+    function closeAllModals() {
+      ['profile-modal', 'connection-modal', 'team-modal'].forEach(closeModal);
+    }
+
+    function renderPickerGrid(containerId, options, selected, onSelect, cols = 6) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      options.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `avatar-option w-10 h-10 rounded-xl border border-forge-border text-xl flex items-center justify-center hover:border-forge-blue/50 transition${item === selected ? ' selected' : ''}`;
+        btn.textContent = item;
+        btn.addEventListener('click', () => onSelect(item));
+        container.appendChild(btn);
+      });
+    }
+
+    function addConnection(name, avatar) {
+      const trimmed = name.trim();
+      if (!trimmed) return false;
+      if (state.connections.some(c => c.displayName.toLowerCase() === trimmed.toLowerCase())) return false;
+
+      state.connections.push({
+        id: generateId(),
+        displayName: trimmed,
+        avatar: avatar || '🦊',
+        addedAt: new Date().toISOString()
+      });
+      saveState();
+      renderTeamView();
+      return true;
+    }
+
+    function removeConnection(id) {
+      state.connections = state.connections.filter(c => c.id !== id);
+      state.teams.forEach(team => {
+        team.memberIds = team.memberIds.filter(mid => mid !== id);
+        team.quests.forEach(q => {
+          if (q.assigneeId === id) q.assigneeId = SELF_ID;
+        });
+      });
+      saveState();
+      renderTeamView();
+    }
+
+    function createTeam(name, emoji, description, memberIds) {
+      const trimmed = name.trim();
+      if (!trimmed) return false;
+
+      const team = {
+        id: generateId(),
+        name: trimmed,
+        emoji: emoji || '📋',
+        description: description.trim(),
+        memberIds: [SELF_ID, ...memberIds.filter(id => id !== SELF_ID)],
+        quests: [],
+        inviteCode: generateInviteCode(),
+        createdAt: new Date().toISOString()
+      };
+
+      state.teams.unshift(team);
+      state.selectedTeamId = team.id;
+      saveState();
+      renderTeamView();
+      return true;
+    }
+
+    function deleteTeam(id) {
+      state.teams = state.teams.filter(t => t.id !== id);
+      if (state.selectedTeamId === id) {
+        state.selectedTeamId = state.teams[0]?.id || null;
+      }
+      saveState();
+      renderTeamView();
+    }
+
+    function selectTeam(id) {
+      state.selectedTeamId = id;
+      saveState();
+      renderTeamView();
+    }
+
+    function addTeamQuest(teamId, title, assigneeId, difficulty) {
+      const team = state.teams.find(t => t.id === teamId);
+      if (!team) return false;
+
+      const trimmed = title.trim();
+      if (!trimmed) return false;
+
+      const assignee = team.memberIds.includes(assigneeId) ? assigneeId : SELF_ID;
+      team.quests.unshift({
+        id: generateId(),
+        title: trimmed,
+        difficulty,
+        assigneeId: assignee,
+        completed: false,
+        completedAt: null,
+        completedBy: null
+      });
+      saveState();
+      renderTeamView();
+      return true;
+    }
+
+    function toggleTeamQuest(teamId, questId, checkboxEl) {
+      const team = state.teams.find(t => t.id === teamId);
+      const quest = team?.quests.find(q => q.id === questId);
+      if (!quest) return;
+
+      const xp = DIFFICULTY_XP[quest.difficulty];
+      const prevLevel = getLevel(state.totalXP);
+      const isYours = quest.assigneeId === SELF_ID;
+
+      if (!quest.completed) {
+        quest.completed = true;
+        quest.completedAt = new Date().toISOString();
+        quest.completedBy = SELF_ID;
+        if (isYours) {
+          state.totalXP += xp;
+          state.questsCompleted += 1;
+          updateStreak();
+          showXPPopup(xp, checkboxEl);
+          const newLevel = getLevel(state.totalXP);
+          if (newLevel > prevLevel) showLevelUp(newLevel);
+        }
+      } else {
+        quest.completed = false;
+        quest.completedAt = null;
+        quest.completedBy = null;
+        if (isYours) {
+          state.totalXP = Math.max(0, state.totalXP - xp);
+          state.questsCompleted = Math.max(0, state.questsCompleted - 1);
+        }
+      }
+
+      saveState();
+      render();
+      renderTeamView();
+    }
+
+    function deleteTeamQuest(teamId, questId) {
+      const team = state.teams.find(t => t.id === teamId);
+      const quest = team?.quests.find(q => q.id === questId);
+      if (!quest) return;
+
+      if (quest.completed && quest.assigneeId === SELF_ID) {
+        const xp = DIFFICULTY_XP[quest.difficulty];
+        state.totalXP = Math.max(0, state.totalXP - xp);
+        state.questsCompleted = Math.max(0, state.questsCompleted - 1);
+      }
+
+      team.quests = team.quests.filter(q => q.id !== questId);
+      saveState();
+      render();
+      renderTeamView();
+    }
+
+    function getTeamProgress(team) {
+      const total = team.quests.length;
+      const done = team.quests.filter(q => q.completed).length;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      return { total, done, pct };
+    }
+
+    function getMemberContribution(team, memberId) {
+      const assigned = team.quests.filter(q => q.assigneeId === memberId);
+      return { assigned: assigned.length, done: assigned.filter(q => q.completed).length };
+    }
+
+    function renderMemberChip(member, removable = false) {
+      const chip = document.createElement('div');
+      chip.className = `flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full border text-sm ${member.isYou ? 'assignee-you' : 'border-forge-border bg-forge-bg/60'}`;
+      chip.innerHTML = `
+        <span class="w-6 h-6 rounded-full flex items-center justify-center text-sm bg-forge-border/50">${member.avatar}</span>
+        <span class="font-medium text-slate-300">${escapeHtml(member.displayName)}${member.isYou ? ' <span class="text-forge-blue text-xs">(you)</span>' : ''}</span>
+        ${removable ? '<button type="button" class="remove-connection ml-1 w-5 h-5 rounded-full text-slate-500 hover:text-red-400 hover:bg-red-400/10 flex items-center justify-center text-xs" aria-label="Remove">×</button>' : ''}
+      `;
+      if (removable) {
+        chip.querySelector('.remove-connection').addEventListener('click', () => removeConnection(member.id));
+      }
+      return chip;
+    }
+
+    function renderTeamQuestItem(team, quest) {
+      const li = document.createElement('li');
+      const member = getMemberInfo(quest.assigneeId);
+      const xp = DIFFICULTY_XP[quest.difficulty];
+      li.className = `quest-item group flex items-center gap-3 p-3 rounded-xl border border-forge-border bg-forge-bg/40 hover:border-forge-purple/30 transition-all duration-200 difficulty-${quest.difficulty}${quest.completed ? ' completed' : ''}`;
+
+      li.innerHTML = `
+        <label class="flex items-center gap-3 flex-1 cursor-pointer min-w-0">
+          <input type="checkbox" class="quest-checkbox sr-only" ${quest.completed ? 'checked' : ''} />
+          <span class="check-box shrink-0 w-6 h-6 rounded-lg border-2 border-forge-border flex items-center justify-center transition-all duration-200">
+            <svg class="w-3.5 h-3.5 text-forge-bg opacity-0 scale-50 transition-all duration-200" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+            </svg>
+          </span>
+          <span class="quest-title flex-1 min-w-0">
+            <span class="block truncate font-medium text-slate-200">${escapeHtml(quest.title)}</span>
+            <span class="text-xs text-slate-500">${member.isYou ? 'Assigned to you' : `Assigned to ${escapeHtml(member.displayName)}`}${quest.completed && quest.completedBy === SELF_ID && !member.isYou ? ' · marked done by you' : ''}</span>
+          </span>
+          <span class="shrink-0 flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-xs font-semibold ${member.isYou ? 'assignee-you' : 'border-forge-border text-slate-400'}">
+            <span>${member.avatar}</span>
+            <span class="hidden sm:inline">${escapeHtml(member.displayName.split(' ')[0])}</span>
+          </span>
+          <span class="difficulty-badge shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full">${DIFFICULTY_LABELS[quest.difficulty]} · ${xp} XP</span>
+        </label>
+        <button class="delete-btn opacity-0 group-hover:opacity-100 shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-all" title="Delete task" aria-label="Delete task">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+      `;
+
+      li.querySelector('.quest-checkbox').addEventListener('change', () => toggleTeamQuest(team.id, quest.id, li));
+
+      li.querySelector('.delete-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteTeamQuest(team.id, quest.id);
+      });
+
+      return li;
+    }
+
+    function renderTeamView() {
+      const connList = document.getElementById('connections-list');
+      const connEmpty = document.getElementById('connections-empty');
+      connList.innerHTML = '';
+      document.getElementById('connection-count').textContent =
+        `${state.connections.length} connected`;
+
+      if (state.connections.length === 0) {
+        connEmpty.classList.remove('hidden');
+      } else {
+        connEmpty.classList.add('hidden');
+        state.connections.forEach(conn => {
+          connList.appendChild(renderMemberChip({ ...conn, isYou: false }, true));
+        });
+      }
+
+      const teamsList = document.getElementById('teams-list');
+      const teamsEmpty = document.getElementById('teams-empty');
+      teamsList.innerHTML = '';
+
+      if (state.teams.length === 0) {
+        teamsEmpty.classList.remove('hidden');
+      } else {
+        teamsEmpty.classList.add('hidden');
+        state.teams.forEach(team => {
+          const progress = getTeamProgress(team);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `team-card w-full text-left p-3 rounded-xl border border-forge-border bg-forge-bg/40 hover:border-forge-purple/40 transition${team.id === state.selectedTeamId ? ' selected' : ''}`;
+          btn.innerHTML = `
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-lg">${team.emoji}</span>
+              <span class="font-semibold text-slate-200 truncate">${escapeHtml(team.name)}</span>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-500">
+              <span>${team.memberIds.length} members</span>
+              <span class="text-forge-purple">${progress.done}/${progress.total} done</span>
+            </div>
+          `;
+          btn.addEventListener('click', () => selectTeam(team.id));
+          teamsList.appendChild(btn);
+        });
+      }
+
+      const team = getSelectedTeam();
+      const detail = document.getElementById('team-detail');
+      const placeholder = document.getElementById('team-detail-placeholder');
+
+      if (!team) {
+        detail.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+        return;
+      }
+
+      detail.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+
+      document.getElementById('team-detail-emoji').textContent = team.emoji;
+      document.getElementById('team-detail-name').textContent = team.name;
+      document.getElementById('team-detail-desc').textContent = team.description || 'No description';
+      document.getElementById('team-invite-code').textContent = team.inviteCode;
+
+      const membersEl = document.getElementById('team-members');
+      membersEl.innerHTML = '';
+      team.memberIds.forEach(mid => membersEl.appendChild(renderMemberChip(getMemberInfo(mid))));
+
+      const contribEl = document.getElementById('team-contributions');
+      contribEl.innerHTML = '';
+      team.memberIds.forEach(mid => {
+        const m = getMemberInfo(mid);
+        const c = getMemberContribution(team, mid);
+        const card = document.createElement('div');
+        card.className = 'p-2.5 rounded-lg bg-forge-bg/50 border border-forge-border text-center';
+        card.innerHTML = `
+          <p class="text-lg mb-0.5">${m.avatar}</p>
+          <p class="text-xs font-medium text-slate-300 truncate">${escapeHtml(m.displayName.split(' ')[0])}</p>
+          <p class="text-xs text-forge-purple font-semibold mt-1">${c.done}/${c.assigned} done</p>
+        `;
+        contribEl.appendChild(card);
+      });
+
+      const progress = getTeamProgress(team);
+      document.getElementById('team-progress-text').textContent = `${progress.done} / ${progress.total} tasks (${progress.pct}%)`;
+      document.getElementById('team-progress-bar').style.width = `${progress.pct}%`;
+
+      const assigneeSelect = document.getElementById('team-assignee-select');
+      assigneeSelect.innerHTML = '';
+      team.memberIds.forEach(mid => {
+        const m = getMemberInfo(mid);
+        const opt = document.createElement('option');
+        opt.value = mid;
+        opt.textContent = `${m.avatar} ${m.displayName}${m.isYou ? ' (you)' : ''}`;
+        assigneeSelect.appendChild(opt);
+      });
+
+      const questList = document.getElementById('team-quest-list');
+      const questEmpty = document.getElementById('team-quests-empty');
+      questList.innerHTML = '';
+
+      const active = team.quests.filter(q => !q.completed);
+      const done = team.quests.filter(q => q.completed);
+
+      if (team.quests.length === 0) {
+        questEmpty.classList.remove('hidden');
+      } else {
+        questEmpty.classList.add('hidden');
+        [...active, ...done].forEach(q => questList.appendChild(renderTeamQuestItem(team, q)));
+      }
+    }
+
+    function initConnectionAvatarPicker() {
+      renderPickerGrid('connection-avatar-picker', AVATAR_OPTIONS, connectionAvatarDraft, (emoji) => {
+        connectionAvatarDraft = emoji;
+        initConnectionAvatarPicker();
+      });
+    }
+
+    function initTeamEmojiPicker() {
+      const container = document.getElementById('team-emoji-picker');
+      container.innerHTML = '';
+      TEAM_EMOJIS.forEach(emoji => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `avatar-option w-10 h-10 rounded-xl border border-forge-border text-xl flex items-center justify-center transition${emoji === teamEmojiDraft ? ' selected' : ''}`;
+        btn.textContent = emoji;
+        btn.addEventListener('click', () => {
+          teamEmojiDraft = emoji;
+          initTeamEmojiPicker();
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    function renderTeamMemberPicker() {
+      const container = document.getElementById('team-member-picker');
+      container.innerHTML = '';
+
+      if (state.connections.length === 0) {
+        container.innerHTML = '<p class="text-sm text-slate-500 py-2">Add connections first to invite them to your party.</p>';
+        return;
+      }
+
+      state.connections.forEach(conn => {
+        const label = document.createElement('label');
+        label.className = 'flex items-center gap-3 p-2 rounded-lg border border-forge-border hover:border-forge-purple/30 cursor-pointer transition';
+        const checked = teamMemberDraft.has(conn.id);
+        label.innerHTML = `
+          <input type="checkbox" class="team-member-check rounded border-forge-border bg-forge-bg text-forge-purple focus:ring-forge-purple/30" data-id="${conn.id}" ${checked ? 'checked' : ''} />
+          <span class="text-lg">${conn.avatar}</span>
+          <span class="text-sm font-medium text-slate-300">${escapeHtml(conn.displayName)}</span>
+        `;
+        label.querySelector('input').addEventListener('change', (e) => {
+          if (e.target.checked) teamMemberDraft.add(conn.id);
+          else teamMemberDraft.delete(conn.id);
+        });
+        container.appendChild(label);
+      });
+    }
+
+    function openConnectionModal() {
+      connectionAvatarDraft = '🦊';
+      document.getElementById('connection-name-input').value = '';
+      initConnectionAvatarPicker();
+      openModal('connection-modal');
+      document.getElementById('connection-name-input').focus();
+    }
+
+    function openTeamModal() {
+      teamEmojiDraft = '📋';
+      teamMemberDraft = new Set();
+      document.getElementById('team-name-input').value = '';
+      document.getElementById('team-desc-input').value = '';
+      initTeamEmojiPicker();
+      renderTeamMemberPicker();
+      openModal('team-modal');
+      document.getElementById('team-name-input').focus();
+    }
+
+    function initTeam() {
+      document.getElementById('tab-solo').addEventListener('click', () => switchView('solo'));
+      document.getElementById('tab-team').addEventListener('click', () => switchView('team'));
+      document.getElementById('add-connection-btn').addEventListener('click', openConnectionModal);
+      document.getElementById('create-team-btn').addEventListener('click', openTeamModal);
+
+      document.querySelectorAll('.connection-close-btn, .connection-backdrop').forEach(el => {
+        el.addEventListener('click', () => closeModal('connection-modal'));
+      });
+      document.querySelectorAll('.team-close-btn, .team-backdrop').forEach(el => {
+        el.addEventListener('click', () => closeModal('team-modal'));
+      });
+
+      document.getElementById('connection-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('connection-name-input').value;
+        if (addConnection(name, connectionAvatarDraft)) {
+          closeModal('connection-modal');
+        } else {
+          document.getElementById('connection-name-input').focus();
+          document.getElementById('connection-name-input').classList.add('border-red-400/60');
+          setTimeout(() => document.getElementById('connection-name-input').classList.remove('border-red-400/60'), 1500);
+        }
+      });
+
+      document.getElementById('team-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (createTeam(
+          document.getElementById('team-name-input').value,
+          teamEmojiDraft,
+          document.getElementById('team-desc-input').value,
+          [...teamMemberDraft]
+        )) {
+          closeModal('team-modal');
+        } else {
+          document.getElementById('team-name-input').focus();
+        }
+      });
+
+      document.getElementById('add-team-quest-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const team = getSelectedTeam();
+        if (!team) return;
+        const input = document.getElementById('team-quest-input');
+        if (addTeamQuest(team.id, input.value, document.getElementById('team-assignee-select').value, document.getElementById('team-difficulty-select').value)) {
+          input.value = '';
+          input.focus();
+        }
+      });
+
+      document.getElementById('delete-team-btn').addEventListener('click', () => {
+        const team = getSelectedTeam();
+        if (team && confirm(`Delete party "${team.name}"? This can't be undone.`)) {
+          deleteTeam(team.id);
+        }
+      });
+
+      document.getElementById('copy-invite-btn').addEventListener('click', () => {
+        const team = getSelectedTeam();
+        if (!team) return;
+        navigator.clipboard.writeText(team.inviteCode).then(() => {
+          const span = document.getElementById('team-invite-code');
+          span.textContent = 'Copied!';
+          span.classList.remove('text-forge-purple');
+          span.classList.add('text-forge-green');
+          setTimeout(() => {
+            span.textContent = team.inviteCode;
+            span.classList.remove('text-forge-green');
+            span.classList.add('text-forge-purple');
+          }, 1500);
+        });
+      });
+    }
+
+    function applyQuestXP(quest, completing) {
+      const xp = DIFFICULTY_XP[quest.difficulty];
+      const prevLevel = getLevel(state.totalXP);
+
+      if (completing) {
+        quest.completed = true;
+        quest.completedAt = new Date().toISOString();
+        quest.completedPeriod = getPeriodKey(quest.recurrence || 'once');
+        state.totalXP += xp;
+        state.questsCompleted += 1;
+        updateStreak();
+        return { xp, prevLevel, completed: true };
+      }
+
+      quest.completed = false;
+      quest.completedAt = null;
+      quest.completedPeriod = null;
+      state.totalXP = Math.max(0, state.totalXP - xp);
+      state.questsCompleted = Math.max(0, state.questsCompleted - 1);
+      return { xp, prevLevel, completed: false };
+    }
+
+    function addQuest(title, difficulty, recurrence = 'once') {
+      const trimmed = title.trim();
+      if (!trimmed) return false;
+      const rec = RECURRENCE_OPTIONS[recurrence] ? recurrence : 'once';
+
+      state.quests.unshift({
+        id: generateId(),
+        title: trimmed,
+        difficulty,
+        recurrence: rec,
+        completed: false,
+        completedAt: null,
+        completedPeriod: null
+      });
+      logActivity('teen_quest_added', { questTitle: trimmed, difficulty, source: 'teen' });
+      saveState();
+      render();
+      if (state.activeRole === 'parent') renderParentView();
+      return true;
+    }
+
+    function addParentQuest(title, difficulty, recurrence = 'once') {
+      const trimmed = title.trim();
+      if (!trimmed) return false;
+      const rec = RECURRENCE_OPTIONS[recurrence] ? recurrence : 'once';
+
+      state.parentQuests.unshift({
+        id: generateId(),
+        title: trimmed,
+        difficulty,
+        recurrence: rec,
+        completed: false,
+        completedAt: null,
+        completedPeriod: null,
+        assignedAt: new Date().toISOString()
+      });
+      logActivity('parent_quest_assigned', { questTitle: trimmed, difficulty, source: 'parent' });
+      saveState();
+      renderParentView();
+      if (state.activeRole === 'teen') render();
+      return true;
+    }
+
+    function editParentQuest(id, title, difficulty, recurrence) {
+      const quest = state.parentQuests.find(q => q.id === id);
+      if (!quest) return false;
+      const trimmed = title.trim();
+      if (!trimmed) return false;
+
+      quest.title = trimmed;
+      quest.difficulty = difficulty;
+      if (recurrence && RECURRENCE_OPTIONS[recurrence]) quest.recurrence = recurrence;
+      logActivity('parent_quest_edited', { questTitle: trimmed, difficulty, source: 'parent' });
+      saveState();
+      renderParentView();
+      if (state.activeRole === 'teen') render();
+      return true;
+    }
+
+    function deleteParentQuest(id) {
+      const quest = state.parentQuests.find(q => q.id === id);
+      if (!quest) return;
+
+      if (quest.completed) {
+        const xp = DIFFICULTY_XP[quest.difficulty];
+        state.totalXP = Math.max(0, state.totalXP - xp);
+        state.questsCompleted = Math.max(0, state.questsCompleted - 1);
+      }
+
+      logActivity('parent_quest_deleted', { questTitle: quest.title, source: 'parent' });
+      state.parentQuests = state.parentQuests.filter(q => q.id !== id);
+      saveState();
+      renderParentView();
+      if (state.activeRole === 'teen') render();
+    }
+
+    function toggleQuest(id, checkboxEl, source = 'teen') {
+      const list = source === 'parent' ? state.parentQuests : state.quests;
+      const quest = list.find(q => q.id === id);
+      if (!quest) return;
+
+      if (!isRecurrenceAvailableToday(quest.recurrence)) return;
+
+      const wasCompleted = quest.completed;
+      const result = applyQuestXP(quest, !wasCompleted);
+
+      if (!wasCompleted) {
+        logActivity('teen_quest_completed', {
+          questTitle: quest.title,
+          difficulty: quest.difficulty,
+          source,
+          xp: result.xp
+        });
+        showXPPopup(result.xp, checkboxEl);
+        const newLevel = getLevel(state.totalXP);
+        if (newLevel > result.prevLevel) showLevelUp(newLevel);
+      } else {
+        logActivity('teen_quest_uncompleted', { questTitle: quest.title, source });
+      }
+
+      saveState();
+      render();
+      if (state.activeRole === 'parent') renderParentView();
+    }
+
+    function deleteQuest(id) {
+      const quest = state.quests.find(q => q.id === id);
+      if (!quest) return;
+
+      if (quest.completed) {
+        const xp = DIFFICULTY_XP[quest.difficulty];
+        state.totalXP = Math.max(0, state.totalXP - xp);
+        state.questsCompleted = Math.max(0, state.questsCompleted - 1);
+      }
+
+      logActivity('teen_quest_deleted', { questTitle: quest.title, source: 'teen' });
+      state.quests = state.quests.filter(q => q.id !== id);
+      saveState();
+      render();
+      if (state.activeRole === 'parent') renderParentView();
+    }
+
+    function showXPPopup(xp, anchorEl) {
+      const popup = document.createElement('div');
+      popup.className = 'xp-popup font-bold text-forge-green text-lg';
+      popup.style.cssText = 'position:fixed;z-index:150;pointer-events:none;';
+      popup.textContent = `+${xp} XP`;
+
+      const rect = anchorEl.getBoundingClientRect();
+      popup.style.left = `${rect.left + rect.width / 2}px`;
+      popup.style.top = `${rect.top}px`;
+      popup.style.transform = 'translateX(-50%)';
+
+      document.body.appendChild(popup);
+      setTimeout(() => popup.remove(), 1200);
+    }
+
+    function showLevelUp(level) {
+      const toast = document.getElementById('level-up-toast');
+      document.getElementById('level-up-number').textContent = level;
+      toast.classList.remove('hidden');
+
+      const badge = document.getElementById('level-badge');
+      badge.classList.add('level-up-pulse');
+
+      setTimeout(() => {
+        toast.classList.add('hidden');
+        badge.classList.remove('level-up-pulse');
+      }, 3000);
+    }
+
+    function renderQuestItem(quest, source = 'teen', options = {}) {
+      const { allowDelete = source === 'teen', showParentBadge = source === 'parent', parentManage = false, readOnly = false } = options;
+      normalizeQuest(quest);
+      const available = isRecurrenceAvailableToday(quest.recurrence);
+      const waitingMsg = !available ? RECURRENCE_OPTIONS[quest.recurrence]?.waiting : null;
+      const canInteract = available && !readOnly;
+
+      const li = document.createElement('li');
+      li.className = `quest-item group flex items-center gap-3 p-3 rounded-xl border border-forge-border bg-forge-bg/40 hover:border-forge-blue/30 transition-all duration-200 difficulty-${quest.difficulty}${quest.completed && available ? ' completed' : ''}${source === 'parent' ? ' border-amber-500/10' : ''}${!available ? ' quest-unavailable' : ''}`;
+      li.dataset.id = quest.id;
+
+      const xp = DIFFICULTY_XP[quest.difficulty];
+      const recShort = getRecurrenceShort(quest.recurrence);
+
+      const checkUI = readOnly || !available
+        ? `<span class="shrink-0 w-6 h-6 rounded-lg border-2 flex items-center justify-center text-sm ${quest.completed && available ? 'border-forge-green/50 bg-forge-green/20 text-forge-green' : 'border-forge-border text-slate-600'}">${quest.completed && available ? '✓' : '·'}</span>`
+        : `<input type="checkbox" class="quest-checkbox sr-only" ${quest.completed ? 'checked' : ''} />
+          <span class="check-box shrink-0 w-6 h-6 rounded-lg border-2 border-forge-border flex items-center justify-center transition-all duration-200">
+            <svg class="w-3.5 h-3.5 text-forge-bg opacity-0 scale-50 transition-all duration-200" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+            </svg>
+          </span>`;
+
+      const sublines = [];
+      if (showParentBadge) sublines.push('<span class="text-xs text-amber-400/80">Assigned by parent</span>');
+      if (waitingMsg) sublines.push(`<span class="text-xs text-forge-purple/80">${waitingMsg}</span>`);
+      else if (quest.recurrence !== 'once') sublines.push(`<span class="text-xs text-slate-500">Repeats ${escapeHtml(RECURRENCE_OPTIONS[quest.recurrence].label.toLowerCase())}</span>`);
+
+      li.innerHTML = `
+        <label class="flex items-center gap-3 flex-1 ${canInteract ? 'cursor-pointer' : ''} min-w-0">
+          ${checkUI}
+          <span class="quest-title flex-1 min-w-0">
+            <span class="block truncate font-medium text-slate-200">${escapeHtml(quest.title)}</span>
+            ${sublines.length ? sublines.join('') : ''}
+          </span>
+          <span class="recurrence-badge shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full hidden sm:inline">${recShort}</span>
+          ${showParentBadge ? '<span class="parent-badge shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full hidden md:inline">Parent</span>' : ''}
+          <span class="difficulty-badge shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full">${DIFFICULTY_LABELS[quest.difficulty]} · ${xp} XP</span>
+        </label>
+        ${parentManage ? `
+          <button class="edit-parent-btn opacity-0 group-hover:opacity-100 shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-amber-400 hover:bg-amber-400/10 transition-all" title="Edit quest" aria-label="Edit quest">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          </button>
+        ` : ''}
+        ${allowDelete ? `
+          <button class="delete-btn opacity-0 group-hover:opacity-100 shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-all" title="Delete quest" aria-label="Delete quest">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        ` : ''}
+      `;
+
+      const checkbox = li.querySelector('.quest-checkbox');
+      if (checkbox && canInteract) checkbox.addEventListener('change', () => toggleQuest(quest.id, li, source));
+
+      if (allowDelete) {
+        li.querySelector('.delete-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (source === 'parent') deleteParentQuest(quest.id);
+          else deleteQuest(quest.id);
+        });
+      }
+
+      if (parentManage) {
+        li.querySelector('.edit-parent-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          openParentQuestEdit(quest);
+        });
+      }
+
+      return li;
+    }
+
+    function openParentQuestEdit(quest) {
+      const newTitle = prompt('Edit quest title:', quest.title);
+      if (newTitle === null) return;
+      const diff = prompt('Difficulty: easy, medium, or hard', quest.difficulty);
+      if (diff === null) return;
+      const d = ['easy', 'medium', 'hard'].includes(diff.toLowerCase()) ? diff.toLowerCase() : quest.difficulty;
+      const rec = prompt('Recurrence: once, daily, weekly, weekdays, weekends, monthly', quest.recurrence || 'once');
+      if (rec === null) return;
+      const r = RECURRENCE_OPTIONS[rec.toLowerCase()] ? rec.toLowerCase() : quest.recurrence;
+      editParentQuest(quest.id, newTitle, d, r);
+    }
+
+    function renderParentView() {
+      const level = getLevel(state.totalXP);
+      document.getElementById('parent-header-sub').textContent = `Monitoring ${getDisplayName()}`;
+      document.getElementById('parent-teen-avatar').textContent = state.profile.avatar || '⚔️';
+      document.getElementById('parent-teen-name').textContent = getDisplayName();
+      document.getElementById('parent-teen-title').textContent = getAdventurerTitle();
+      document.getElementById('parent-teen-bio').textContent = state.profile.bio.trim() || 'No bio yet';
+      document.getElementById('parent-stat-level').textContent = level;
+      document.getElementById('parent-stat-xp').textContent = state.totalXP.toLocaleString();
+      document.getElementById('parent-stat-streak').textContent = state.streak;
+      document.getElementById('parent-stat-completed').textContent = state.questsCompleted;
+
+      const redeemList = document.getElementById('parent-redeem-list');
+      const redeemEmpty = document.getElementById('parent-redeem-empty');
+      if (redeemList) {
+        redeemList.innerHTML = '';
+        const redemptions = state.redemptions || [];
+        document.getElementById('parent-redeem-count').textContent =
+          `${redemptions.length} reward${redemptions.length !== 1 ? 's' : ''}`;
+
+        if (redemptions.length === 0) {
+          redeemEmpty?.classList.remove('hidden');
+        } else {
+          redeemEmpty?.classList.add('hidden');
+          redemptions.slice(0, 10).forEach(r => {
+            const li = document.createElement('li');
+            const date = new Date(r.redeemedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            const link = getRedemptionLink(r);
+            li.className = 'p-3 rounded-xl border border-forge-border bg-forge-bg/40';
+            li.innerHTML = `
+              <div class="flex items-center gap-3">
+                <span class="text-xl">${r.emoji}</span>
+                <div class="flex-1 min-w-0">
+                  <p class="font-medium text-slate-200 truncate">${escapeHtml(r.name)}</p>
+                  <p class="text-xs text-slate-500">${date} · ${r.cost} XP spent</p>
+                </div>
+              </div>
+              ${link ? `
+                <a href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer"
+                  class="mt-2 flex items-center justify-center gap-1 w-full py-2 rounded-lg text-xs font-semibold border border-forge-purple/40 text-forge-purple hover:bg-forge-purple/10 transition">
+                  ${escapeHtml(link.label)} →
+                </a>
+              ` : ''}
+            `;
+            redeemList.appendChild(li);
+          });
+        }
+      }
+
+      const managedList = document.getElementById('parent-managed-list');
+      const managedEmpty = document.getElementById('parent-managed-empty');
+      managedList.innerHTML = '';
+      document.getElementById('parent-managed-count').textContent =
+        `${state.parentQuests.length} quest${state.parentQuests.length !== 1 ? 's' : ''}`;
+
+      if (state.parentQuests.length === 0) {
+        managedEmpty.classList.remove('hidden');
+      } else {
+        managedEmpty.classList.add('hidden');
+        const active = state.parentQuests.filter(q => !q.completed);
+        const done = state.parentQuests.filter(q => q.completed);
+        [...active, ...done].forEach(q => {
+          managedList.appendChild(renderQuestItem(q, 'parent', { allowDelete: true, parentManage: true, readOnly: true }));
+        });
+      }
+
+      const feed = document.getElementById('activity-feed');
+      const actEmpty = document.getElementById('activity-empty');
+      feed.innerHTML = '';
+      if (state.activityLog.length === 0) {
+        actEmpty.classList.remove('hidden');
+      } else {
+        actEmpty.classList.add('hidden');
+        state.activityLog.slice(0, 25).forEach(entry => {
+          const li = document.createElement('li');
+          const isParent = entry.type.startsWith('parent_');
+          li.className = `p-3 rounded-xl border border-forge-border bg-forge-bg/40 text-sm`;
+          li.innerHTML = `
+            <p class="text-slate-300">${escapeHtml(getActivityMessage(entry))}</p>
+            <p class="text-xs mt-1 ${isParent ? 'text-amber-500/70' : 'text-slate-500'}">${formatActivityTime(entry.timestamp)}${isParent ? ' · You' : ''}</p>
+          `;
+          feed.appendChild(li);
+        });
+      }
+
+      const allList = document.getElementById('parent-all-quests');
+      const allEmpty = document.getElementById('parent-all-empty');
+      allList.innerHTML = '';
+      const allQuests = [
+        ...state.parentQuests.map(q => ({ ...q, source: 'parent' })),
+        ...state.quests.map(q => ({ ...q, source: 'teen' }))
+      ];
+      document.getElementById('parent-all-count').textContent = `${allQuests.length} total`;
+
+      if (allQuests.length === 0) {
+        allEmpty.classList.remove('hidden');
+      } else {
+        allEmpty.classList.add('hidden');
+        allQuests.forEach(q => {
+          const li = document.createElement('li');
+          const xp = DIFFICULTY_XP[q.difficulty];
+          li.className = `flex items-center gap-3 p-3 rounded-xl border border-forge-border bg-forge-bg/40 ${q.completed ? 'opacity-60' : ''}`;
+          li.innerHTML = `
+            <span class="text-lg shrink-0">${q.completed ? '✅' : '⬜'}</span>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-slate-200 truncate ${q.completed ? 'line-through' : ''}">${escapeHtml(q.title)}</p>
+              <p class="text-xs text-slate-500">${DIFFICULTY_LABELS[q.difficulty]} · ${xp} XP · ${getRecurrenceShort(q.recurrence)}</p>
+            </div>
+            <span class="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${q.source === 'parent' ? 'parent-badge' : 'border border-forge-border text-slate-400'}">${q.source === 'parent' ? 'Parent' : 'Teen'}</span>
+          `;
+          allList.appendChild(li);
+        });
+      }
+    }
+
+    function initParent() {
+      document.querySelectorAll('#role-switcher .role-tab').forEach(btn => {
+        btn.addEventListener('click', () => switchRole(btn.dataset.role));
+      });
+
+      document.getElementById('parent-assign-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('parent-quest-input');
+        const diff = document.getElementById('parent-difficulty-select').value;
+        const recurrence = document.getElementById('parent-recurrence-select').value;
+        if (addParentQuest(input.value, diff, recurrence)) {
+          input.value = '';
+          input.focus();
+        }
+      });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function renderProfileButton() {
+      const avatar = state.profile.avatar || '⚔️';
+      document.getElementById('profile-btn-avatar').textContent = avatar;
+      document.getElementById('profile-btn-name').textContent = getDisplayName();
+      document.getElementById('profile-btn-title').textContent = getAdventurerTitle();
+    }
+
+    function renderProfileView() {
+      const level = getLevel(state.totalXP);
+      const avatar = state.profile.avatar || '⚔️';
+      const bio = state.profile.bio.trim();
+
+      document.getElementById('profile-view-avatar').textContent = avatar;
+      document.getElementById('profile-view-name').textContent = getDisplayName();
+      document.getElementById('profile-view-title').textContent = getAdventurerTitle();
+      document.getElementById('profile-view-bio').textContent = bio || 'No motto yet — add one to inspire your quests!';
+      document.getElementById('profile-view-level').textContent = level;
+      document.getElementById('profile-view-streak').textContent = state.streak;
+      document.getElementById('profile-view-quests').textContent = state.questsCompleted;
+
+      const createdEl = document.getElementById('profile-view-created');
+      if (state.profile.createdAt) {
+        const date = new Date(state.profile.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        createdEl.textContent = `Adventurer since ${date}`;
+      } else {
+        createdEl.textContent = '';
+      }
+    }
+
+    function renderAvatarPicker(selectedAvatar) {
+      const picker = document.getElementById('avatar-picker');
+      picker.innerHTML = '';
+
+      AVATAR_OPTIONS.forEach(emoji => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `avatar-option w-10 h-10 rounded-xl border border-forge-border text-xl flex items-center justify-center hover:border-forge-blue/50 transition${emoji === selectedAvatar ? ' selected' : ''}`;
+        btn.textContent = emoji;
+        btn.setAttribute('aria-label', `Avatar ${emoji}`);
+        btn.addEventListener('click', () => {
+          profileEditDraft.avatar = emoji;
+          renderAvatarPicker(emoji);
+        });
+        picker.appendChild(btn);
+      });
+    }
+
+    function populateProfileForm() {
+      profileEditDraft = {
+        displayName: state.profile.displayName,
+        adventurerTitle: state.profile.adventurerTitle,
+        bio: state.profile.bio,
+        avatar: state.profile.avatar || '⚔️'
+      };
+
+      document.getElementById('profile-name-input').value = profileEditDraft.displayName;
+      document.getElementById('profile-title-input').value = profileEditDraft.adventurerTitle;
+      document.getElementById('profile-bio-input').value = profileEditDraft.bio;
+      renderAvatarPicker(profileEditDraft.avatar);
+    }
+
+    function showProfileMode(mode) {
+      const view = document.getElementById('profile-view');
+      const edit = document.getElementById('profile-edit');
+      const title = document.getElementById('profile-modal-title');
+
+      if (mode === 'edit') {
+        view.classList.add('hidden');
+        edit.classList.remove('hidden');
+        title.textContent = isFirstProfileSetup ? 'Forge Your Profile' : 'Edit Profile';
+        document.getElementById('profile-skip-btn').classList.toggle('hidden', !isFirstProfileSetup);
+        populateProfileForm();
+      } else {
+        view.classList.remove('hidden');
+        edit.classList.add('hidden');
+        title.textContent = 'Your Profile';
+        renderProfileView();
+      }
+    }
+
+    function openProfileModal(startInEdit = false) {
+      isFirstProfileSetup = !hasProfile();
+      const openInEdit = startInEdit || isFirstProfileSetup;
+
+      showProfileMode(openInEdit ? 'edit' : 'view');
+      openModal('profile-modal');
+
+      if (openInEdit) {
+        document.getElementById('profile-name-input').focus();
+      }
+    }
+
+    function closeProfileModal() {
+      closeModal('profile-modal');
+      isFirstProfileSetup = false;
+    }
+
+    function saveProfile(e) {
+      e.preventDefault();
+
+      const displayName = document.getElementById('profile-name-input').value.trim();
+      if (!displayName) {
+        document.getElementById('profile-name-input').focus();
+        document.getElementById('profile-name-input').classList.add('border-red-400/60');
+        setTimeout(() => document.getElementById('profile-name-input').classList.remove('border-red-400/60'), 1500);
+        return;
+      }
+
+      const now = new Date().toISOString();
+      state.profile = {
+        ...state.profile,
+        displayName,
+        adventurerTitle: document.getElementById('profile-title-input').value.trim(),
+        bio: document.getElementById('profile-bio-input').value.trim(),
+        avatar: profileEditDraft?.avatar || state.profile.avatar || '⚔️',
+        createdAt: state.profile.createdAt || now,
+        updatedAt: now
+      };
+
+      logActivity('profile_updated', { questTitle: displayName });
+      saveState();
+      renderProfileButton();
+      if (state.activeView === 'team') renderTeamView();
+      if (state.activeRole === 'parent') renderParentView();
+      isFirstProfileSetup = false;
+      showProfileMode('view');
+    }
+
+    function initProfile() {
+      document.getElementById('profile-btn').addEventListener('click', () => openProfileModal(false));
+      document.getElementById('profile-close-btn').addEventListener('click', closeProfileModal);
+      document.getElementById('profile-backdrop').addEventListener('click', closeProfileModal);
+      document.getElementById('profile-edit-btn').addEventListener('click', () => showProfileMode('edit'));
+      document.getElementById('profile-cancel-btn').addEventListener('click', () => {
+        if (isFirstProfileSetup && !hasProfile()) {
+          closeProfileModal();
+        } else {
+          showProfileMode('view');
+        }
+      });
+      document.getElementById('profile-edit').addEventListener('submit', saveProfile);
+      document.getElementById('profile-skip-btn').addEventListener('click', closeProfileModal);
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (!document.getElementById('profile-modal').classList.contains('hidden')) closeProfileModal();
+        else if (!document.getElementById('connection-modal').classList.contains('hidden')) closeModal('connection-modal');
+        else if (!document.getElementById('team-modal').classList.contains('hidden')) closeModal('team-modal');
+      });
+    }
+
+    function render() {
+      processAllRecurringQuests();
+
+      const level = getLevel(state.totalXP);
+      const xpInLevel = getXPInCurrentLevel(state.totalXP);
+
+      document.getElementById('level-display').textContent = level;
+      document.getElementById('xp-text').textContent = `${xpInLevel} / ${XP_PER_LEVEL} XP`;
+      document.getElementById('xp-bar').style.width = `${xpInLevel}%`;
+
+      document.getElementById('stat-total-xp').textContent = state.totalXP.toLocaleString();
+      document.getElementById('stat-streak').textContent = state.streak;
+      document.getElementById('stat-completed').textContent = state.questsCompleted;
+
+      const spendable = getSpendableXP();
+      const sidebarSpend = document.getElementById('sidebar-spendable');
+      if (sidebarSpend) sidebarSpend.textContent = spendable.toLocaleString();
+
+      renderProfileButton();
+
+      const parentSection = document.getElementById('parent-quests-section');
+      const parentList = document.getElementById('parent-quest-list');
+      parentList.innerHTML = '';
+
+      if (state.parentQuests.length > 0) {
+        parentSection.classList.remove('hidden');
+        document.getElementById('parent-quest-count').textContent =
+          `${state.parentQuests.length} quest${state.parentQuests.length !== 1 ? 's' : ''}`;
+        const pActive = state.parentQuests.filter(q => !q.completed);
+        const pDone = state.parentQuests.filter(q => q.completed);
+        [...pActive, ...pDone].forEach(quest => {
+          parentList.appendChild(renderQuestItem(quest, 'parent', { allowDelete: false, showParentBadge: true }));
+        });
+      } else {
+        parentSection.classList.add('hidden');
+      }
+
+      const list = document.getElementById('quest-list');
+      const empty = document.getElementById('empty-state');
+      list.innerHTML = '';
+
+      const active = state.quests.filter(q => !q.completed);
+      const done = state.quests.filter(q => q.completed);
+
+      document.getElementById('quest-count').textContent =
+        `${state.quests.length} quest${state.quests.length !== 1 ? 's' : ''}`;
+
+      const hasAny = state.quests.length > 0 || state.parentQuests.length > 0;
+
+      if (state.quests.length === 0) {
+        empty.classList.remove('hidden');
+        empty.classList.add('flex');
+        if (state.parentQuests.length > 0) {
+          const t = empty.querySelector('p.text-slate-400');
+          const s = empty.querySelector('p.text-sm');
+          if (t) t.textContent = 'No personal quests yet';
+          if (s) s.textContent = 'Add your own quests above, or complete the ones from your parent!';
+        }
+      } else {
+        empty.classList.add('hidden');
+        empty.classList.remove('flex');
+
+        [...active, ...done].forEach(quest => {
+          list.appendChild(renderQuestItem(quest, 'teen'));
+        });
+      }
+
+      if (!hasAny) {
+        const t = empty.querySelector('p.text-slate-400');
+        const s = empty.querySelector('p.text-sm');
+        if (t) t.textContent = 'No quests yet';
+        if (s) s.textContent = 'Forge your first quest above and start earning XP!';
+      }
+
+      if (state.activeView === 'store') renderStoreView();
+    }
+
+    function boot() {
+      closeAllModals();
+      document.body.style.overflow = '';
+
+      if (!Array.isArray(state.parentQuests)) state.parentQuests = [];
+      if (!Array.isArray(state.activityLog)) state.activityLog = [];
+      if (!Array.isArray(state.redemptions)) state.redemptions = [];
+      if (typeof state.xpSpent !== 'number') state.xpSpent = 0;
+
+      const addForm = document.getElementById('add-quest-form');
+      if (addForm) {
+        addForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const input = document.getElementById('quest-input');
+          const difficulty = document.getElementById('difficulty-select').value;
+          const recurrence = document.getElementById('recurrence-select').value;
+          if (addQuest(input.value, difficulty, recurrence)) {
+            input.value = '';
+            input.focus();
+          }
+        });
+      }
+
+      initProfile();
+      initTeam();
+      initStore();
+      initParent();
+      render();
+      switchView(state.activeView || 'solo');
+      switchRole(state.activeRole || 'teen');
+
+    }
+
+    try {
+      boot();
+    } catch (err) {
+      console.error('QuestForge failed to start:', err);
+      closeAllModals();
+      document.body.style.overflow = '';
+    }
+  </script>
+</body>
+</html>
