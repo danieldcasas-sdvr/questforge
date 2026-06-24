@@ -529,11 +529,22 @@
     <!-- XP Dashboard View -->
     <div id="view-dashboard" class="hidden space-y-5">
 
-      <div class="stat-card rounded-2xl border border-forge-blue/25 p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-forge-blue/15 border border-forge-blue/30 flex items-center justify-center text-lg">📈</div>
-        <div>
-          <h2 class="text-lg font-bold text-slate-100">XP Progress Dashboard</h2>
-          <p class="text-sm text-slate-500">Track how much XP you earn over time and plan your next quests</p>
+      <div class="stat-card rounded-2xl border border-forge-blue/25 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div class="flex items-center gap-3 flex-1">
+          <div class="w-10 h-10 rounded-xl bg-forge-blue/15 border border-forge-blue/30 flex items-center justify-center text-lg">📈</div>
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">XP Progress Dashboard</h2>
+            <p class="text-sm text-slate-500">Track how much XP you earn over time and plan your next quests</p>
+            <p id="dashboard-sample-note" class="hidden text-xs text-forge-purple mt-1">Sample data loaded — preview only. Clear anytime.</p>
+          </div>
+        </div>
+        <div class="flex gap-2 shrink-0">
+          <button id="load-sample-data-btn" type="button" class="px-4 py-2 rounded-xl text-xs font-semibold border border-forge-purple/40 text-forge-purple hover:bg-forge-purple/10 transition">
+            Load Sample Data
+          </button>
+          <button id="clear-sample-data-btn" type="button" class="hidden px-4 py-2 rounded-xl text-xs font-semibold border border-forge-border text-slate-500 hover:text-slate-300 hover:bg-forge-border/30 transition">
+            Clear Sample
+          </button>
         </div>
       </div>
 
@@ -1215,7 +1226,8 @@
         xpSpent: 0,
         redemptions: [],
         xpHistory: {},
-        dashboardRange: '7d'
+        dashboardRange: '7d',
+        sampleDataLoaded: false
       };
     }
 
@@ -1751,12 +1763,119 @@
       });
     }
 
+    function sampleRand(seed) {
+      const x = Math.sin(seed * 12.9898) * 43758.5453;
+      return x - Math.floor(x);
+    }
+
+    function loadSampleDashboardData() {
+      const history = {};
+      const end = new Date();
+      end.setHours(0, 0, 0, 0);
+
+      for (let i = 379; i >= 0; i--) {
+        const d = new Date(end);
+        d.setDate(d.getDate() - i);
+        const day = d.toISOString().split('T')[0];
+        const dow = d.getDay();
+        const seed = i + 1;
+        const skipChance = dow === 0 || dow === 6 ? 0.5 : 0.22;
+
+        if (sampleRand(seed) < skipChance) continue;
+
+        const questCount = 1 + Math.floor(sampleRand(seed + 1) * 3);
+        let xp = 0;
+        for (let q = 0; q < questCount; q++) {
+          const roll = sampleRand(seed + 10 + q);
+          if (roll < 0.38) xp += 10;
+          else if (roll < 0.72) xp += 25;
+          else xp += 50;
+        }
+        if (sampleRand(seed + 50) < 0.07) xp += 50 + Math.floor(sampleRand(seed + 51) * 75);
+        history[day] = xp;
+      }
+
+      const today = todayString();
+      const yesterday = yesterdayString();
+      history[today] = Math.max(history[today] || 0, 40);
+      history[yesterday] = Math.max(history[yesterday] || 0, 65);
+
+      state.xpHistory = history;
+      state.totalXP = Object.values(history).reduce((sum, v) => sum + v, 0);
+      state.questsCompleted = Math.max(state.questsCompleted, Math.round(state.totalXP / 27));
+      state.streak = 6;
+      state.lastActiveDate = today;
+      state.sampleDataLoaded = true;
+
+      const sampleQuests = [
+        { title: 'Finish math homework', difficulty: 'medium', recurrence: 'daily' },
+        { title: 'Practice guitar 20 min', difficulty: 'easy', recurrence: 'daily' },
+        { title: 'Deep clean bedroom', difficulty: 'hard', recurrence: 'once' },
+        { title: 'Read for 30 minutes', difficulty: 'medium', recurrence: 'weekdays' }
+      ];
+
+      sampleQuests.forEach(q => {
+        const exists = state.quests.some(existing => existing.title === q.title);
+        if (!exists) {
+          state.quests.push({
+            id: generateId(),
+            title: q.title,
+            difficulty: q.difficulty,
+            recurrence: q.recurrence,
+            completed: false,
+            completedAt: null,
+            completedPeriod: null
+          });
+        }
+      });
+
+      saveState();
+      updateSampleDataUI();
+      render();
+      renderDashboardView();
+    }
+
+    function clearSampleDashboardData() {
+      state.xpHistory = {};
+      state.totalXP = 0;
+      state.questsCompleted = 0;
+      state.streak = 0;
+      state.lastActiveDate = null;
+      state.sampleDataLoaded = false;
+      state.quests = state.quests.filter(q =>
+        !['Finish math homework', 'Practice guitar 20 min', 'Deep clean bedroom', 'Read for 30 minutes'].includes(q.title)
+      );
+
+      saveState();
+      updateSampleDataUI();
+      render();
+      renderDashboardView();
+    }
+
+    function updateSampleDataUI() {
+      const note = document.getElementById('dashboard-sample-note');
+      const clearBtn = document.getElementById('clear-sample-data-btn');
+      const loadBtn = document.getElementById('load-sample-data-btn');
+      const active = Boolean(state.sampleDataLoaded);
+
+      note?.classList.toggle('hidden', !active);
+      clearBtn?.classList.toggle('hidden', !active);
+      if (loadBtn) loadBtn.textContent = active ? 'Reload Sample' : 'Load Sample Data';
+    }
+
     function renderDashboardView() {
+      updateSampleDataUI();
       renderDashboardChart();
     }
 
     function initDashboard() {
       document.getElementById('dashboard-btn')?.addEventListener('click', () => switchView('dashboard'));
+      document.getElementById('load-sample-data-btn')?.addEventListener('click', loadSampleDashboardData);
+      document.getElementById('clear-sample-data-btn')?.addEventListener('click', () => {
+        if (confirm('Clear sample data? Your XP history and sample quests will be reset.')) {
+          clearSampleDashboardData();
+        }
+      });
       document.querySelectorAll('#dashboard-range-pills .range-pill').forEach(btn => {
         btn.addEventListener('click', () => {
           state.dashboardRange = btn.dataset.range;
